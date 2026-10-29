@@ -1,3 +1,43 @@
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Regular-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-RegularItalic-Static.otf') format('opentype');
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Medium-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Semibold-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Bold-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
 /* Warm editorial treatment, scoped to the existing application and auth shells. */
 :root {
   --frankly-canvas: #faf9f5;

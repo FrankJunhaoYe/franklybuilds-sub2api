@@ -39,6 +39,7 @@ export default {
       },
       fontFamily: {
         sans: [
+          'Anthropic Sans Text',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
