@@ -1,0 +1,58 @@
+/* Warm editorial treatment, scoped to the existing application and auth shells. */
+:root {
+  --frankly-canvas: #faf9f5;
+  --frankly-surface: #f5f0e8;
+  --frankly-border: #e6dfd8;
+  --frankly-ink: #141413;
+  --frankly-primary: #a9583e;
+  --frankly-primary-active: #8d4632;
+}
+
+html:not(.dark) .frankly-app,
+html:not(.dark) .frankly-auth {
+  background: var(--frankly-canvas);
+  color: var(--frankly-ink);
+}
+
+html:not(.dark) .frankly-auth-background {
+  background: var(--frankly-canvas);
+}
+
+.frankly-auth-title {
+  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, 'Times New Roman', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+html:not(.dark) .frankly-app .glass {
+  background: rgba(250, 249, 245, 0.94);
+  border-color: var(--frankly-border);
+}
+
+html:not(.dark) .frankly-app .card,
+html:not(.dark) .frankly-auth .card-glass {
+  background: var(--frankly-surface);
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.frankly-app .btn-primary,
+.frankly-auth .btn-primary {
+  background: var(--frankly-primary);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.frankly-app .btn-primary:hover,
+.frankly-app .btn-primary:active,
+.frankly-auth .btn-primary:hover,
+.frankly-auth .btn-primary:active {
+  background: var(--frankly-primary-active);
+  box-shadow: none;
+}
+
+.frankly-app .input,
+.frankly-auth .input {
+  border-radius: 8px;
+}
