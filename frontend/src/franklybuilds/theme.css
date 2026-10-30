@@ -75,12 +75,19 @@
   unicode-range: U+3000-303F, U+3400-4DBF, U+F900-FAFF, U+FF00-FFEF, U+20000-2FA1F;
 }
 
-/* Warm editorial treatment, scoped to the existing application and auth shells. */
+/* Warm editorial treatment, scoped to the existing application and auth shells.
+   The palette itself now lives in theme.js and reaches the whole application
+   through Tailwind, so the rules below only cover what utilities cannot: markup
+   with hardcoded surfaces, and overlays Vue teleports outside the layout. */
 :root {
   --frankly-canvas: #faf9f5;
   --frankly-surface: #f5f0e8;
   --frankly-border: #e6dfd8;
   --frankly-ink: #141413;
+  /* The reference puts white on coral #cc785c, which measures 3.28:1 — under
+     the 4.5:1 floor for 14px button labels. Filled controls therefore use the
+     darker coral (#a9583e, 5.06:1) and keep #cc785c for large coral areas and
+     focus rings, where the hue reads as the brand without carrying small text. */
   --frankly-primary: #a9583e;
   --frankly-primary-active: #8d4632;
   --frankly-card: #efe9de;
@@ -150,13 +157,19 @@ html:not(.dark) .frankly-ops .rounded-2xl.bg-gray-50 {
 }
 
 .frankly-auth h2 {
-  font-family: Georgia, 'Songti SC', 'SimSun', serif;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
   font-weight: 400;
   letter-spacing: -0.02em;
 }
 
 html:not(.dark) .frankly-auth .input {
   background: var(--frankly-canvas);
+}
+
+/* Scoped away from :focus — this selector outranks the shared .input:focus
+   rule, so setting the border unconditionally here would suppress the coral
+   focus border on every auth input. */
+html:not(.dark) .frankly-auth .input:not(:focus) {
   border-color: var(--frankly-border);
 }
 
@@ -170,8 +183,18 @@ html:not(.dark) .frankly-auth-background {
   background: var(--frankly-canvas);
 }
 
+/* Display face. The reference's Copernicus / Tiempos Headline are licensed and
+   Cormorant is not bundled, so this is the system-serif substitute: weight 400
+   with negative tracking, which is what carries the editorial voice. CJK falls
+   through to Songti. */
+.frankly-display {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
 .frankly-auth-title {
-  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, 'Songti SC', 'SimSun', serif;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
   font-weight: 400;
   letter-spacing: -0.02em;
 }
@@ -208,8 +231,16 @@ html:not(.dark) .frankly-home {
 
 .frankly-home-title,
 .frankly-home-heading {
-  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, 'Songti SC', 'SimSun', serif;
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
   font-weight: 400;
+}
+
+/* Display tracking tightens as size grows, as in the reference's scale. */
+.frankly-home-title {
+  letter-spacing: -0.03em;
+}
+
+.frankly-home-heading {
   letter-spacing: -0.02em;
 }
 

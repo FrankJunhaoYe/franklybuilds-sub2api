@@ -1,9 +1,7 @@
 <template>
   <div class="frankly-auth relative flex min-h-screen items-center justify-center overflow-hidden p-4">
     <!-- Background -->
-    <div
-      class="frankly-auth-background absolute inset-0 bg-gradient-to-br from-gray-50 via-primary-50/30 to-gray-100 dark:from-dark-950 dark:via-dark-900 dark:to-dark-950"
-    ></div>
+    <div class="frankly-auth-background absolute inset-0 bg-gray-50 dark:bg-dark-950"></div>
 
     <!-- Content Container -->
     <div class="relative z-10 w-full max-w-md">
@@ -26,7 +24,7 @@
       </div>
 
       <!-- Card Container -->
-      <div class="card-glass rounded-2xl p-8 shadow-glass">
+      <div class="card-glass rounded-xl p-8">
         <slot />
       </div>
 

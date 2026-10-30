@@ -1,4 +1,15 @@
-import { primary, warmEffects, neutral, darkNeutral } from './src/franklybuilds/theme.js'
+import {
+  primary,
+  warmEffects,
+  neutral,
+  darkNeutral,
+  teal,
+  plum,
+  success,
+  warning,
+  error,
+  orange
+} from './src/franklybuilds/theme.js'
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -10,7 +21,39 @@ export default {
         primary,
         gray: neutral,
         accent: neutral,
-        dark: darkNeutral
+        dark: darkNeutral,
+
+        // Upstream markup uses stock hue utilities throughout. Remapping the
+        // families here warms the whole application without touching that
+        // markup, so upstream merges stay clean. See theme.js for the ramps.
+        white: '#fffdf9',
+        slate: neutral,
+        zinc: neutral,
+        stone: neutral,
+        neutral,
+
+        // Cool accents collapse onto one warm teal.
+        blue: teal,
+        sky: teal,
+        cyan: teal,
+        indigo: teal,
+        teal,
+
+        // Purple-family badges become plum, still distinct from coral.
+        purple: plum,
+        violet: plum,
+        fuchsia: plum,
+        pink: plum,
+        rose: error,
+
+        // Semantic families keep their meaning in warm form.
+        green: success,
+        emerald: success,
+        lime: success,
+        amber: warning,
+        yellow: warning,
+        orange,
+        red: error
       },
       fontFamily: {
         sans: [
@@ -35,21 +78,32 @@ export default {
         ],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
+      // Elevation is color-block first, shadow rare. The whole stock scale
+      // collapses onto one faint warm shadow so upstream shadow-lg /
+      // shadow-2xl markup stops stacking depth the system does not use.
       boxShadow: {
-        glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
-        'glass-sm': '0 4px 16px rgba(0, 0, 0, 0.06)',
+        none: 'none',
+        sm: '0 1px 2px rgba(20, 20, 19, 0.04)',
+        DEFAULT: '0 1px 3px rgba(20, 20, 19, 0.06)',
+        md: '0 1px 3px rgba(20, 20, 19, 0.06)',
+        lg: '0 1px 3px rgba(20, 20, 19, 0.08)',
+        xl: '0 1px 3px rgba(20, 20, 19, 0.08)',
+        '2xl': '0 2px 6px rgba(20, 20, 19, 0.10)',
+        inner: 'inset 0 1px 2px rgba(20, 20, 19, 0.04)',
+        glass: '0 1px 3px rgba(20, 20, 19, 0.06)',
+        'glass-sm': '0 1px 2px rgba(20, 20, 19, 0.04)',
         glow: warmEffects.glow,
         'glow-lg': warmEffects.glowLarge,
-        card: '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 10px 40px rgba(0, 0, 0, 0.08)',
-        'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        card: '0 1px 3px rgba(20, 20, 19, 0.04)',
+        'card-hover': '0 1px 3px rgba(20, 20, 19, 0.08)',
+        'inner-glow': 'none'
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
         'gradient-primary': warmEffects.gradient,
-        'gradient-dark': 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        'gradient-dark': 'linear-gradient(135deg, #1f1e1b 0%, #181715 100%)',
         'gradient-glass':
-          'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
+          'linear-gradient(135deg, rgba(250,249,245,0.10) 0%, rgba(250,249,245,0.05) 100%)',
         'mesh-gradient': warmEffects.mesh
       },
       animation: {
@@ -95,8 +149,21 @@ export default {
       backdropBlur: {
         xs: '2px'
       },
+      // Radius is hierarchical in the reference: 8px controls, 12px cards,
+      // 16px largest containers. Upstream uses rounded-lg for controls and
+      // rounded-xl/2xl/3xl for panels, so the scale compresses onto those
+      // three steps instead of running to 24px and beyond.
       borderRadius: {
-        '4xl': '2rem'
+        none: '0',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '8px',
+        lg: '8px',
+        xl: '12px',
+        '2xl': '12px',
+        '3xl': '16px',
+        '4xl': '16px',
+        full: '9999px'
       }
     }
   },
