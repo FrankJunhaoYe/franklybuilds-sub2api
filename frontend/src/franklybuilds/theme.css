@@ -38,6 +38,43 @@
   font-display: swap;
 }
 
+/* Split CJK ranges load only when characters from that range are used. */
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-0.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+4E00-5FFF;
+}
+
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-1.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+6000-7FFF;
+}
+
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-2.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+8000-9FFF;
+}
+
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-3.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+3000-303F, U+3400-4DBF, U+F900-FAFF, U+FF00-FFEF, U+20000-2FA1F;
+}
+
 /* Warm editorial treatment, scoped to the existing application and auth shells. */
 :root {
   --frankly-canvas: #faf9f5;
@@ -59,7 +96,7 @@ html:not(.dark) .frankly-auth-background {
 }
 
 .frankly-auth-title {
-  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, 'Times New Roman', serif;
+  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, 'Songti SC', 'SimSun', serif;
   font-weight: 400;
   letter-spacing: -0.02em;
 }
@@ -71,14 +108,57 @@ html:not(.dark) .frankly-app .glass {
 
 html:not(.dark) .frankly-app .card,
 html:not(.dark) .frankly-auth .card-glass {
-  background: var(--frankly-surface);
+  background: #fffdf9;
   border: 1px solid var(--frankly-border);
   border-radius: 12px;
   box-shadow: none;
 }
 
+/* Dashboard metrics use one visual language; semantic status colors remain intact. */
+html:not(.dark) .frankly-stats .card > div > div:first-child {
+  background: var(--frankly-surface);
+}
+
+html:not(.dark) .frankly-stats .card > div > div:first-child svg {
+  color: var(--frankly-primary);
+}
+
+html:not(.dark) .frankly-home {
+  background: var(--frankly-canvas);
+}
+
+.frankly-home-decoration {
+  display: none;
+}
+
+.frankly-home-title,
+.frankly-home-heading {
+  font-family: 'Cormorant Garamond', 'EB Garamond', Georgia, 'Songti SC', 'SimSun', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+html:not(.dark) .frankly-home-features > div {
+  background: #efe9de;
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+html:not(.dark) .frankly-home-features > div > div:first-child {
+  background: var(--frankly-canvas);
+  box-shadow: none;
+  transform: none;
+}
+
+html:not(.dark) .frankly-home-features > div > div:first-child svg {
+  color: var(--frankly-primary);
+}
+
 .frankly-app .btn-primary,
-.frankly-auth .btn-primary {
+.frankly-auth .btn-primary,
+.frankly-home .btn-primary {
   background: var(--frankly-primary);
   border-radius: 8px;
   box-shadow: none;
@@ -87,7 +167,9 @@ html:not(.dark) .frankly-auth .card-glass {
 .frankly-app .btn-primary:hover,
 .frankly-app .btn-primary:active,
 .frankly-auth .btn-primary:hover,
-.frankly-auth .btn-primary:active {
+.frankly-auth .btn-primary:active,
+.frankly-home .btn-primary:hover,
+.frankly-home .btn-primary:active {
   background: var(--frankly-primary-active);
   box-shadow: none;
 }

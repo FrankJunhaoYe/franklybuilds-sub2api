@@ -40,6 +40,12 @@ export default {
       fontFamily: {
         sans: [
           'Anthropic Sans Text',
+          'Frankly Noto Sans SC',
+          'PingFang SC',
+          'Microsoft YaHei',
+          'Noto Sans CJK SC',
+          'Noto Sans SC',
+          'Source Han Sans SC',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
