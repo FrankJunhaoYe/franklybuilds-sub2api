@@ -19,6 +19,8 @@
   body {
     @apply bg-gray-50 text-gray-900 dark:bg-dark-950 dark:text-gray-100;
     @apply min-h-screen;
+    /* Body copy sits at 1.55 in the reference rather than Tailwind's 1.5. */
+    line-height: 1.55;
   }
 
   /* 自定义滚动条 - 仅针对 Firefox，避免 Chrome 取消 webkit 的全局定制 */
@@ -72,18 +74,18 @@
   /* ============ 按钮样式 ============ */
   .btn {
     @apply inline-flex items-center justify-center gap-2;
-    @apply rounded-xl px-4 py-2.5 text-sm font-medium;
-    @apply transition-all duration-200 ease-out;
-    @apply focus:outline-none focus:ring-2 focus:ring-primary-500/50 focus:ring-offset-2;
-    @apply disabled:transform-none disabled:cursor-not-allowed disabled:opacity-50;
-    @apply active:scale-[0.98];
+    @apply rounded-md px-4 py-2.5 text-sm font-medium;
+    @apply transition-colors duration-150 ease-out;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2;
+    @apply disabled:cursor-not-allowed disabled:opacity-50;
   }
 
+  /* Flat coral fill, darkening on press; the system encodes no other state.
+     The 600 stop (#a9583e) carries white label text at 5.06:1 — the reference's
+     #cc785c would only reach 3.28:1 behind 14px text. */
   .btn-primary {
-    @apply bg-gradient-to-r from-primary-500 to-primary-600;
-    @apply text-white shadow-md shadow-primary-500/25;
-    @apply hover:from-primary-600 hover:to-primary-700 hover:shadow-lg hover:shadow-primary-500/30;
-    @apply dark:shadow-primary-500/20;
+    @apply bg-primary-600 text-white;
+    @apply hover:bg-primary-700 active:bg-primary-700;
   }
 
   .btn-secondary {
@@ -100,23 +102,20 @@
   }
 
   .btn-danger {
-    @apply bg-gradient-to-r from-red-500 to-red-600;
-    @apply text-white shadow-md shadow-red-500/25;
-    @apply hover:from-red-600 hover:to-red-700 hover:shadow-lg hover:shadow-red-500/30;
+    @apply bg-red-500 text-white;
+    @apply hover:bg-red-600 active:bg-red-600;
   }
 
   .btn-success {
-    @apply bg-gradient-to-r from-emerald-500 to-emerald-600;
-    @apply text-white shadow-md shadow-emerald-500/25;
-    @apply hover:from-emerald-600 hover:to-emerald-700 hover:shadow-lg hover:shadow-emerald-500/30;
-    @apply dark:shadow-emerald-500/20;
+    @apply bg-emerald-600 text-white;
+    @apply hover:bg-emerald-700 active:bg-emerald-700;
   }
 
+  /* Amber is the one semantic hue too light to carry white label text, so the
+     filled warning button drops to the 600 stop (4.9:1 rather than 3.2:1). */
   .btn-warning {
-    @apply bg-gradient-to-r from-amber-500 to-amber-600;
-    @apply text-white shadow-md shadow-amber-500/25;
-    @apply hover:from-amber-600 hover:to-amber-700 hover:shadow-lg hover:shadow-amber-500/30;
-    @apply dark:shadow-amber-500/20;
+    @apply bg-amber-600 text-white;
+    @apply hover:bg-amber-700 active:bg-amber-700;
   }
 
   .btn-stripe {
@@ -165,13 +164,14 @@
 
   /* ============ 输入框样式 ============ */
   .input {
-    @apply w-full rounded-xl px-4 py-2.5 text-sm;
+    @apply w-full rounded-md px-4 py-2.5 text-sm;
     @apply bg-white dark:bg-dark-800;
     @apply border border-gray-200 dark:border-dark-600;
     @apply text-gray-900 dark:text-gray-100;
     @apply placeholder:text-gray-400 dark:placeholder:text-dark-400;
-    @apply transition-all duration-200;
-    @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30;
+    @apply transition-colors duration-150;
+    /* Focus shifts the border to coral with a 3px 15%-alpha ring. */
+    @apply focus:border-primary-500 focus:outline-none focus:ring-[3px] focus:ring-primary-500/15;
     @apply disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-dark-900;
   }
 
@@ -210,43 +210,38 @@
     -moz-appearance: textfield;
   }
 
-  /* ============ 玻璃效果 ============ */
+  /* Surfaces are opaque cream blocks separated by hairlines; the system does
+     not use frosted translucency, so .glass keeps its name and loses the blur. */
   .glass {
-    @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
+    @apply bg-white dark:bg-dark-900;
   }
 
   .glass-card {
-    @apply bg-white/70 dark:bg-dark-800/70;
-    @apply backdrop-blur-xl;
-    @apply rounded-2xl;
-    @apply border border-white/20 dark:border-dark-700/50;
-    @apply shadow-glass;
-    @apply transition-all duration-300;
+    @apply bg-white dark:bg-dark-800;
+    @apply rounded-xl;
+    @apply border border-gray-200 dark:border-dark-700;
+    @apply transition-colors duration-150;
   }
 
   /* ============ 卡片样式 ============ */
   .card {
-    @apply bg-white dark:bg-dark-800/50;
-    @apply rounded-2xl;
-    @apply border border-gray-100 dark:border-dark-700/50;
-    @apply shadow-card;
-    @apply transition-all duration-300;
+    @apply bg-white dark:bg-dark-800;
+    @apply rounded-xl;
+    @apply border border-gray-200 dark:border-dark-700;
+    @apply transition-colors duration-150;
   }
 
   .card-hover {
-    @apply hover:-translate-y-0.5 hover:shadow-card-hover;
-    @apply hover:border-gray-200 dark:hover:border-dark-600;
+    @apply hover:border-gray-300 dark:hover:border-dark-600;
   }
 
   .card-glass {
-    @apply bg-white/70 dark:bg-dark-800/70;
-    @apply backdrop-blur-xl;
-    @apply border border-white/20 dark:border-dark-700/50;
-    @apply shadow-glass;
+    @apply bg-white dark:bg-dark-800;
+    @apply border border-gray-200 dark:border-dark-700;
   }
 
   .card-header {
-    @apply border-b border-gray-100 dark:border-dark-700;
+    @apply border-b border-gray-200 dark:border-dark-700;
     @apply px-6 py-4;
   }
 
@@ -255,7 +250,7 @@
   }
 
   .card-footer {
-    @apply border-t border-gray-100 dark:border-dark-700;
+    @apply border-t border-gray-200 dark:border-dark-700;
     @apply px-6 py-4;
   }
 
@@ -288,7 +283,7 @@
   }
 
   .stat-value {
-    @apply text-2xl font-bold text-gray-900 dark:text-white truncate;
+    @apply truncate text-2xl font-medium tracking-[-0.02em] text-gray-900 dark:text-white;
   }
 
   .stat-label {
@@ -319,7 +314,7 @@
   .table th {
     @apply px-4 py-3 text-left font-medium;
     @apply text-gray-600 dark:text-dark-300;
-    @apply bg-gray-50 dark:bg-dark-800/50;
+    @apply bg-gray-100 dark:bg-dark-900;
     @apply border-b border-gray-200 dark:border-dark-700;
   }
 
@@ -372,7 +367,7 @@
   .dropdown {
     @apply absolute z-50;
     @apply bg-white dark:bg-dark-800;
-    @apply rounded-xl;
+    @apply rounded-lg;
     @apply border border-gray-200 dark:border-dark-700;
     @apply shadow-lg;
     @apply py-1;
@@ -398,7 +393,7 @@
     @apply w-full;
     @apply max-h-[95vh] sm:max-h-[90vh];
     @apply bg-white dark:bg-dark-800;
-    @apply rounded-2xl shadow-2xl;
+    @apply rounded-xl shadow-2xl;
     @apply border border-gray-200 dark:border-dark-700;
     @apply flex flex-col;
   }
@@ -411,7 +406,7 @@
   }
 
   .modal-title {
-    @apply text-lg font-semibold text-gray-900 dark:text-white;
+    @apply text-lg font-medium text-gray-900 dark:text-white;
   }
 
   .modal-body {
@@ -490,12 +485,12 @@
   .dialog-container {
     @apply flex w-full flex-col;
     @apply max-h-[90vh];
-    @apply rounded-2xl bg-white dark:bg-dark-800;
-    @apply shadow-xl;
+    @apply rounded-xl bg-white dark:bg-dark-800;
+    @apply border border-gray-200 shadow-xl dark:border-dark-700;
   }
 
   .dialog-header {
-    @apply border-b border-gray-100 px-6 py-4 dark:border-dark-700;
+    @apply border-b border-gray-200 px-6 py-4 dark:border-dark-700;
     @apply flex items-center justify-between;
   }
 
@@ -504,8 +499,8 @@
   }
 
   .dialog-footer {
-    @apply border-t border-gray-100 px-6 py-4 dark:border-dark-700;
-    @apply bg-gray-50/60 dark:bg-dark-900/40;
+    @apply border-t border-gray-200 px-6 py-4 dark:border-dark-700;
+    @apply bg-gray-100 dark:bg-dark-900;
     @apply flex items-center justify-end gap-3;
   }
 
@@ -515,7 +510,7 @@
     @apply min-w-[320px] max-w-md;
     @apply bg-white dark:bg-dark-800;
     @apply rounded-xl shadow-lg;
-    @apply border-l-4;
+    @apply border border-gray-200 border-l-4 dark:border-dark-700;
     @apply p-4;
     @apply animate-slide-in-right;
   }
@@ -560,21 +555,23 @@
   }
 
   .sidebar-link {
-    @apply flex items-center gap-3 rounded-xl py-2.5;
+    @apply flex items-center gap-3 rounded-md py-2.5;
     @apply overflow-hidden;
-    @apply text-sm font-medium;
-    @apply text-gray-600 dark:text-dark-300;
-    @apply transition-all duration-200;
-    @apply hover:bg-gray-100 dark:hover:bg-dark-800;
+    @apply text-sm font-normal;
+    @apply text-gray-500 dark:text-dark-300;
+    @apply transition-colors duration-150;
+    @apply hover:bg-gray-200 dark:hover:bg-dark-800;
     @apply hover:text-gray-900 dark:hover:text-white;
     padding-left: 1.0625rem;
     padding-right: 0.875rem;
   }
 
+  /* Coral is scarce: the active row is a cream step with ink text, not a
+     coral-tinted fill, so the only coral in the nav is the brand mark. */
   .sidebar-link-active {
-    @apply bg-primary-50 dark:bg-primary-900/20;
-    @apply text-primary-600 dark:text-primary-400;
-    @apply hover:bg-primary-100 dark:hover:bg-primary-900/30;
+    @apply bg-gray-200 font-medium dark:bg-dark-700;
+    @apply text-gray-900 dark:text-white;
+    @apply hover:bg-gray-200 dark:hover:bg-dark-700;
   }
 
   .sidebar-section {
@@ -592,8 +589,9 @@
     @apply mb-6;
   }
 
+  /* Emphasis comes from size and tracking, never from a bolder display weight. */
   .page-title {
-    @apply text-2xl font-bold text-gray-900 dark:text-white;
+    @apply text-2xl font-medium tracking-[-0.02em] text-gray-900 dark:text-white;
   }
 
   .page-description {
@@ -637,20 +635,20 @@
   /* ============ 标签页 ============ */
   .tabs {
     @apply flex gap-1 p-1;
-    @apply rounded-xl bg-gray-100 dark:bg-dark-800;
+    @apply rounded-md bg-gray-100 dark:bg-dark-800;
   }
 
   .tab {
-    @apply rounded-lg px-4 py-2 text-sm font-medium;
-    @apply text-gray-600 dark:text-dark-400;
-    @apply transition-all duration-200;
+    @apply rounded-md px-3.5 py-2 text-sm font-medium;
+    @apply text-gray-500 dark:text-dark-400;
+    @apply transition-colors duration-150;
     @apply hover:text-gray-900 dark:hover:text-white;
   }
 
+  /* The selected tab reads as the strongest cream step, not a raised chip. */
   .tab-active {
-    @apply bg-white dark:bg-dark-700;
+    @apply bg-gray-200 dark:bg-dark-700;
     @apply text-gray-900 dark:text-white;
-    @apply shadow-sm;
   }
 
   /* ============ 进度条 ============ */
@@ -659,8 +657,8 @@
   }
 
   .progress-bar {
-    @apply h-full bg-gradient-to-r from-primary-500 to-primary-400;
-    @apply transition-all duration-300;
+    @apply h-full bg-primary-500;
+    @apply transition-[width] duration-300;
   }
 
   /* ============ 开关 ============ */
@@ -692,10 +690,12 @@
     @apply text-primary-600 dark:text-primary-400;
   }
 
+  /* Code is one of the system's dark product surfaces, dark in both modes.
+     Lines scroll horizontally rather than wrapping, at a fixed size. */
   .code-block {
-    @apply font-mono text-sm;
-    @apply bg-gray-900 text-gray-100;
-    @apply overflow-x-auto rounded-xl p-4;
+    @apply font-mono text-sm leading-relaxed;
+    @apply bg-dark-950 text-gray-50;
+    @apply overflow-x-auto rounded-xl p-6;
   }
 
   /* ============ Tour Description ============ */
@@ -748,14 +748,15 @@
 }
 
 @layer utilities {
-  /* 文字渐变 */
+  /* Gradient text is off-system; the utility stays for upstream callers and
+     resolves to flat ink. */
   .text-gradient {
-    @apply bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-text text-transparent;
+    @apply text-gray-900 dark:text-gray-50;
   }
 
   /* 玻璃效果 */
   .glass {
-    @apply bg-white/80 backdrop-blur-xl dark:bg-dark-800/80;
+    @apply bg-white dark:bg-dark-900;
   }
 
   /* 隐藏滚动条 */

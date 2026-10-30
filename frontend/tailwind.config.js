@@ -1,3 +1,16 @@
+import {
+  primary,
+  warmEffects,
+  neutral,
+  darkNeutral,
+  teal,
+  plum,
+  success,
+  warning,
+  error,
+  orange
+} from './src/franklybuilds/theme.js'
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
@@ -5,51 +18,52 @@ export default {
   theme: {
     extend: {
       colors: {
-        // 主色调 - Teal/Cyan 青色系
-        primary: {
-          50: '#f0fdfa',
-          100: '#ccfbf1',
-          200: '#99f6e4',
-          300: '#5eead4',
-          400: '#2dd4bf',
-          500: '#14b8a6',
-          600: '#0d9488',
-          700: '#0f766e',
-          800: '#115e59',
-          900: '#134e4a',
-          950: '#042f2e'
-        },
-        // 辅助色 - 深蓝灰
-        accent: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617'
-        },
-        // 深色模式背景
-        dark: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#64748b',
-          600: '#475569',
-          700: '#334155',
-          800: '#1e293b',
-          900: '#0f172a',
-          950: '#020617'
-        }
+        primary,
+        gray: neutral,
+        accent: neutral,
+        dark: darkNeutral,
+
+        // Upstream markup uses stock hue utilities throughout. Remapping the
+        // families here warms the whole application without touching that
+        // markup, so upstream merges stay clean. See theme.js for the ramps.
+        white: '#fffdf9',
+        slate: neutral,
+        zinc: neutral,
+        stone: neutral,
+        neutral,
+
+        // Cool accents collapse onto one warm teal.
+        blue: teal,
+        sky: teal,
+        cyan: teal,
+        indigo: teal,
+        teal,
+
+        // Purple-family badges become plum, still distinct from coral.
+        purple: plum,
+        violet: plum,
+        fuchsia: plum,
+        pink: plum,
+        rose: error,
+
+        // Semantic families keep their meaning in warm form.
+        green: success,
+        emerald: success,
+        lime: success,
+        amber: warning,
+        yellow: warning,
+        orange,
+        red: error
       },
       fontFamily: {
         sans: [
+          'Anthropic Sans Text',
+          'Frankly Noto Sans SC',
+          'PingFang SC',
+          'Microsoft YaHei',
+          'Noto Sans CJK SC',
+          'Noto Sans SC',
+          'Source Han Sans SC',
           'system-ui',
           '-apple-system',
           'BlinkMacSystemFont',
@@ -64,23 +78,33 @@ export default {
         ],
         mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
       },
+      // Elevation is color-block first, shadow rare. The whole stock scale
+      // collapses onto one faint warm shadow so upstream shadow-lg /
+      // shadow-2xl markup stops stacking depth the system does not use.
       boxShadow: {
-        glass: '0 8px 32px rgba(0, 0, 0, 0.08)',
-        'glass-sm': '0 4px 16px rgba(0, 0, 0, 0.06)',
-        glow: '0 0 20px rgba(20, 184, 166, 0.25)',
-        'glow-lg': '0 0 40px rgba(20, 184, 166, 0.35)',
-        card: '0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.06)',
-        'card-hover': '0 10px 40px rgba(0, 0, 0, 0.08)',
-        'inner-glow': 'inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+        none: 'none',
+        sm: '0 1px 2px rgba(20, 20, 19, 0.04)',
+        DEFAULT: '0 1px 3px rgba(20, 20, 19, 0.06)',
+        md: '0 1px 3px rgba(20, 20, 19, 0.06)',
+        lg: '0 1px 3px rgba(20, 20, 19, 0.08)',
+        xl: '0 1px 3px rgba(20, 20, 19, 0.08)',
+        '2xl': '0 2px 6px rgba(20, 20, 19, 0.10)',
+        inner: 'inset 0 1px 2px rgba(20, 20, 19, 0.04)',
+        glass: '0 1px 3px rgba(20, 20, 19, 0.06)',
+        'glass-sm': '0 1px 2px rgba(20, 20, 19, 0.04)',
+        glow: warmEffects.glow,
+        'glow-lg': warmEffects.glowLarge,
+        card: '0 1px 3px rgba(20, 20, 19, 0.04)',
+        'card-hover': '0 1px 3px rgba(20, 20, 19, 0.08)',
+        'inner-glow': 'none'
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
-        'gradient-primary': 'linear-gradient(135deg, #14b8a6 0%, #0d9488 100%)',
-        'gradient-dark': 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+        'gradient-primary': warmEffects.gradient,
+        'gradient-dark': 'linear-gradient(135deg, #1f1e1b 0%, #181715 100%)',
         'gradient-glass':
-          'linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.05) 100%)',
-        'mesh-gradient':
-          'radial-gradient(at 40% 20%, rgba(20, 184, 166, 0.12) 0px, transparent 50%), radial-gradient(at 80% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%), radial-gradient(at 0% 50%, rgba(20, 184, 166, 0.08) 0px, transparent 50%)'
+          'linear-gradient(135deg, rgba(250,249,245,0.10) 0%, rgba(250,249,245,0.05) 100%)',
+        'mesh-gradient': warmEffects.mesh
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
@@ -118,15 +142,28 @@ export default {
           '100%': { backgroundPosition: '200% 0' }
         },
         glow: {
-          '0%': { boxShadow: '0 0 20px rgba(20, 184, 166, 0.25)' },
-          '100%': { boxShadow: '0 0 30px rgba(20, 184, 166, 0.4)' }
+          '0%': { boxShadow: warmEffects.glow },
+          '100%': { boxShadow: warmEffects.glowLarge }
         }
       },
       backdropBlur: {
         xs: '2px'
       },
+      // Radius is hierarchical in the reference: 8px controls, 12px cards,
+      // 16px largest containers. Upstream uses rounded-lg for controls and
+      // rounded-xl/2xl/3xl for panels, so the scale compresses onto those
+      // three steps instead of running to 24px and beyond.
       borderRadius: {
-        '4xl': '2rem'
+        none: '0',
+        sm: '4px',
+        DEFAULT: '6px',
+        md: '8px',
+        lg: '8px',
+        xl: '12px',
+        '2xl': '12px',
+        '3xl': '16px',
+        '4xl': '16px',
+        full: '9999px'
       }
     }
   },

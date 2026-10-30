@@ -1,0 +1,390 @@
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Regular-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-RegularItalic-Static.otf') format('opentype');
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Medium-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Semibold-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Anthropic Sans Text';
+  src: url('./fonts/AnthropicSans-Text-Bold-Static.otf') format('opentype');
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+/* Split CJK ranges load only when characters from that range are used. */
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-0.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+4E00-5FFF;
+}
+
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-1.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+6000-7FFF;
+}
+
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-2.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+8000-9FFF;
+}
+
+@font-face {
+  font-family: 'Frankly Noto Sans SC';
+  src: url('./fonts/sc-3.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+  unicode-range: U+3000-303F, U+3400-4DBF, U+F900-FAFF, U+FF00-FFEF, U+20000-2FA1F;
+}
+
+/* Warm editorial treatment, scoped to the existing application and auth shells.
+   The palette itself now lives in theme.js and reaches the whole application
+   through Tailwind, so the rules below only cover what utilities cannot: markup
+   with hardcoded surfaces, and overlays Vue teleports outside the layout. */
+:root {
+  --frankly-canvas: #faf9f5;
+  --frankly-surface: #f5f0e8;
+  --frankly-border: #e6dfd8;
+  --frankly-ink: #141413;
+  /* The reference puts white on coral #cc785c, which measures 3.28:1 — under
+     the 4.5:1 floor for 14px button labels. Filled controls therefore use the
+     darker coral (#a9583e, 5.06:1) and keep #cc785c for large coral areas and
+     focus rings, where the hue reads as the brand without carrying small text. */
+  --frankly-primary: #a9583e;
+  --frankly-primary-active: #8d4632;
+  --frankly-card: #efe9de;
+  --frankly-muted: #6c6a64;
+}
+
+/* Navigation adapts the reference's flat cream surfaces, not its marketing layout. */
+html:not(.dark) .frankly-app .sidebar {
+  background: var(--frankly-surface);
+  border-color: var(--frankly-border);
+}
+
+.frankly-app .sidebar-logo {
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.frankly-app .sidebar-brand-title {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.frankly-app .sidebar-link {
+  border-radius: 6px;
+  font-weight: 400;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  transition-property: background-color, color;
+}
+
+html:not(.dark) .frankly-app .sidebar-header,
+html:not(.dark) .frankly-app .sidebar > .border-t {
+  border-color: var(--frankly-border);
+}
+
+html:not(.dark) .frankly-app .sidebar-link {
+  color: var(--frankly-muted);
+}
+
+html:not(.dark) .frankly-app .sidebar-link:hover,
+html:not(.dark) .frankly-app .sidebar-link-active,
+html:not(.dark) .frankly-app .sidebar-link-active:hover {
+  background: var(--frankly-card);
+  color: var(--frankly-ink);
+}
+
+.frankly-app .sidebar-link-active {
+  font-weight: 500;
+}
+
+.frankly-app .sidebar-section-title {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* Ops pages use their own containers rather than the shared .card class. */
+html:not(.dark) .frankly-ops .rounded-3xl.bg-white {
+  background: var(--frankly-canvas);
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+html:not(.dark) .frankly-ops .rounded-2xl.bg-gray-50 {
+  background: var(--frankly-surface);
+  border-radius: 12px;
+}
+
+.frankly-auth h2 {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+html:not(.dark) .frankly-auth .input {
+  background: var(--frankly-canvas);
+}
+
+/* Scoped away from :focus — this selector outranks the shared .input:focus
+   rule, so setting the border unconditionally here would suppress the coral
+   focus border on every auth input. */
+html:not(.dark) .frankly-auth .input:not(:focus) {
+  border-color: var(--frankly-border);
+}
+
+html:not(.dark) .frankly-app,
+html:not(.dark) .frankly-auth {
+  background: var(--frankly-canvas);
+  color: var(--frankly-ink);
+}
+
+html:not(.dark) .frankly-auth-background {
+  background: var(--frankly-canvas);
+}
+
+/* Display face. The reference's Copernicus / Tiempos Headline are licensed and
+   Cormorant is not bundled, so this is the system-serif substitute: weight 400
+   with negative tracking, which is what carries the editorial voice. CJK falls
+   through to Songti. */
+.frankly-display {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+.frankly-auth-title {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+html:not(.dark) .frankly-app .glass {
+  background: rgba(250, 249, 245, 0.94);
+  border-color: var(--frankly-border);
+}
+
+html:not(.dark) .frankly-app .card,
+html:not(.dark) .frankly-auth .card-glass {
+  background: #fffdf9;
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+/* Dashboard metrics use one visual language; semantic status colors remain intact. */
+html:not(.dark) .frankly-stats .card > div > div:first-child {
+  background: var(--frankly-surface);
+}
+
+html:not(.dark) .frankly-stats .card > div > div:first-child svg {
+  color: var(--frankly-primary);
+}
+
+html:not(.dark) .frankly-home {
+  background: var(--frankly-canvas);
+}
+
+.frankly-home-decoration {
+  display: none;
+}
+
+.frankly-home-title,
+.frankly-home-heading {
+  font-family: Georgia, 'Iowan Old Style', 'Times New Roman', 'Songti SC', 'SimSun', serif;
+  font-weight: 400;
+}
+
+/* Display tracking tightens as size grows, as in the reference's scale. */
+.frankly-home-title {
+  letter-spacing: -0.03em;
+}
+
+.frankly-home-heading {
+  letter-spacing: -0.02em;
+}
+
+html:not(.dark) .frankly-home-features > div {
+  background: #efe9de;
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+html:not(.dark) .frankly-home-features > div > div:first-child {
+  background: var(--frankly-canvas);
+  box-shadow: none;
+  transform: none;
+}
+
+html:not(.dark) .frankly-home-features > div > div:first-child svg {
+  color: var(--frankly-primary);
+}
+
+.frankly-app .btn-primary,
+.frankly-auth .btn-primary,
+.frankly-home .btn-primary {
+  background: var(--frankly-primary);
+  border-radius: 8px;
+  box-shadow: none;
+}
+
+.frankly-app .btn-primary:hover,
+.frankly-app .btn-primary:active,
+.frankly-auth .btn-primary:hover,
+.frankly-auth .btn-primary:active,
+.frankly-home .btn-primary:hover,
+.frankly-home .btn-primary:active {
+  background: var(--frankly-primary-active);
+  box-shadow: none;
+}
+
+.frankly-app .input,
+.frankly-auth .input {
+  border-radius: 8px;
+}
+
+/* Shared surfaces also cover teleported dialogs and menus outside app layouts. */
+:root {
+  --frankly-panel: #faf9f5;
+  --frankly-elevated: #f5f0e8;
+  --frankly-selected: #e8e0d2;
+}
+
+html.dark {
+  --frankly-canvas: #181715;
+  --frankly-surface: #1f1e1b;
+  --frankly-card: #252320;
+  --frankly-panel: #1f1e1b;
+  --frankly-elevated: #252320;
+  --frankly-selected: #3b3833;
+  --frankly-border: #3b3833;
+  --frankly-ink: #faf9f5;
+  --frankly-muted: #a09d96;
+}
+
+body { background-color: var(--frankly-canvas); }
+
+.card, .card-glass, .glass-card, .modal-content, .dialog-container, .dropdown {
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  background: var(--frankly-panel);
+  box-shadow: 0 1px 3px rgb(20 20 19 / 4%);
+  backdrop-filter: none;
+}
+
+.card-hover:hover {
+  transform: none;
+  box-shadow: 0 1px 3px rgb(20 20 19 / 8%);
+}
+
+.card-header, .card-footer, .modal-header, .modal-footer,
+.dialog-header, .dialog-footer, .table-container, .table-wrapper {
+  border-color: var(--frankly-border);
+}
+
+.dialog-footer, .table th, .table-wrapper thead {
+  background: var(--frankly-elevated);
+}
+
+.table tbody tr:hover, .dropdown-item:hover {
+  background: var(--frankly-elevated);
+}
+
+.btn { border-radius: 8px; transition-property: color, background-color, border-color; }
+.btn:active { transform: none; }
+.btn-secondary {
+  background: var(--frankly-panel);
+  color: var(--frankly-ink);
+  border-color: var(--frankly-border);
+  box-shadow: none;
+}
+.btn-secondary:hover { background: var(--frankly-elevated); box-shadow: none; }
+
+.input:not(.input-error) { border-color: var(--frankly-border); }
+.input { background: var(--frankly-panel); color: var(--frankly-ink); border-radius: 8px; }
+.input:not(.input-error):focus {
+  border-color: var(--frankly-primary);
+  box-shadow: 0 0 0 3px rgb(204 120 92 / 15%);
+}
+.input:disabled { opacity: 0.65; }
+
+.tab-active { background: var(--frankly-selected); color: var(--frankly-ink); }
+.code-block { background: #181715; color: #faf9f5; border-radius: 12px; }
+.modal-title, .dialog-header { font-weight: 500; }
+
+html:not(.dark) .frankly-binding-row.rounded-2xl,
+.dark .frankly-binding-row.rounded-2xl {
+  background: var(--frankly-elevated);
+  border-color: var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.dark .frankly-app, .dark .frankly-auth-background, .dark .frankly-home {
+  background: var(--frankly-canvas);
+}
+.dark .frankly-app .sidebar, .dark .frankly-app .glass {
+  background: var(--frankly-surface);
+  border-color: var(--frankly-border);
+}
+.dark .frankly-app .sidebar-link { color: var(--frankly-muted); }
+.dark .frankly-app .sidebar-link:hover,
+.dark .frankly-app .sidebar-link-active {
+  background: var(--frankly-selected);
+  color: var(--frankly-ink);
+}
+.dark .frankly-stats .card > div > div:first-child {
+  background: var(--frankly-elevated);
+}
+.dark .frankly-stats .card > div > div:first-child svg { color: #d59075; }
+.dark .frankly-home-features > div { background: var(--frankly-card); box-shadow: none; }
+.dark .frankly-home-features > div > div:first-child {
+  background: var(--frankly-surface); box-shadow: none; transform: none;
+}
+.dark .frankly-home-features > div > div:first-child svg { color: #d59075; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .card, .glass-card, .sidebar, .sidebar-link { transition: none; }
+}
