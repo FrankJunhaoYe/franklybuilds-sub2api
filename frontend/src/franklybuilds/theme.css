@@ -83,6 +83,81 @@
   --frankly-ink: #141413;
   --frankly-primary: #a9583e;
   --frankly-primary-active: #8d4632;
+  --frankly-card: #efe9de;
+  --frankly-muted: #6c6a64;
+}
+
+/* Navigation adapts the reference's flat cream surfaces, not its marketing layout. */
+html:not(.dark) .frankly-app .sidebar {
+  background: var(--frankly-surface);
+  border-color: var(--frankly-border);
+}
+
+.frankly-app .sidebar-logo {
+  box-shadow: none;
+  border-radius: 8px;
+}
+
+.frankly-app .sidebar-brand-title {
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+
+.frankly-app .sidebar-link {
+  border-radius: 6px;
+  font-weight: 400;
+  padding-top: 9px;
+  padding-bottom: 9px;
+  transition-property: background-color, color;
+}
+
+html:not(.dark) .frankly-app .sidebar-header,
+html:not(.dark) .frankly-app .sidebar > .border-t {
+  border-color: var(--frankly-border);
+}
+
+html:not(.dark) .frankly-app .sidebar-link {
+  color: var(--frankly-muted);
+}
+
+html:not(.dark) .frankly-app .sidebar-link:hover,
+html:not(.dark) .frankly-app .sidebar-link-active,
+html:not(.dark) .frankly-app .sidebar-link-active:hover {
+  background: var(--frankly-card);
+  color: var(--frankly-ink);
+}
+
+.frankly-app .sidebar-link-active {
+  font-weight: 500;
+}
+
+.frankly-app .sidebar-section-title {
+  font-weight: 500;
+  letter-spacing: 0.04em;
+}
+
+/* Ops pages use their own containers rather than the shared .card class. */
+html:not(.dark) .frankly-ops .rounded-3xl.bg-white {
+  background: var(--frankly-canvas);
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+html:not(.dark) .frankly-ops .rounded-2xl.bg-gray-50 {
+  background: var(--frankly-surface);
+  border-radius: 12px;
+}
+
+.frankly-auth h2 {
+  font-family: Georgia, 'Songti SC', 'SimSun', serif;
+  font-weight: 400;
+  letter-spacing: -0.02em;
+}
+
+html:not(.dark) .frankly-auth .input {
+  background: var(--frankly-canvas);
+  border-color: var(--frankly-border);
 }
 
 html:not(.dark) .frankly-app,
