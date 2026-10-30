@@ -253,3 +253,107 @@ html:not(.dark) .frankly-home-features > div > div:first-child svg {
 .frankly-auth .input {
   border-radius: 8px;
 }
+
+/* Shared surfaces also cover teleported dialogs and menus outside app layouts. */
+:root {
+  --frankly-panel: #faf9f5;
+  --frankly-elevated: #f5f0e8;
+  --frankly-selected: #e8e0d2;
+}
+
+html.dark {
+  --frankly-canvas: #181715;
+  --frankly-surface: #1f1e1b;
+  --frankly-card: #252320;
+  --frankly-panel: #1f1e1b;
+  --frankly-elevated: #252320;
+  --frankly-selected: #3b3833;
+  --frankly-border: #3b3833;
+  --frankly-ink: #faf9f5;
+  --frankly-muted: #a09d96;
+}
+
+body { background-color: var(--frankly-canvas); }
+
+.card, .card-glass, .glass-card, .modal-content, .dialog-container, .dropdown {
+  border: 1px solid var(--frankly-border);
+  border-radius: 12px;
+  background: var(--frankly-panel);
+  box-shadow: 0 1px 3px rgb(20 20 19 / 4%);
+  backdrop-filter: none;
+}
+
+.card-hover:hover {
+  transform: none;
+  box-shadow: 0 1px 3px rgb(20 20 19 / 8%);
+}
+
+.card-header, .card-footer, .modal-header, .modal-footer,
+.dialog-header, .dialog-footer, .table-container, .table-wrapper {
+  border-color: var(--frankly-border);
+}
+
+.dialog-footer, .table th, .table-wrapper thead {
+  background: var(--frankly-elevated);
+}
+
+.table tbody tr:hover, .dropdown-item:hover {
+  background: var(--frankly-elevated);
+}
+
+.btn { border-radius: 8px; transition-property: color, background-color, border-color; }
+.btn:active { transform: none; }
+.btn-secondary {
+  background: var(--frankly-panel);
+  color: var(--frankly-ink);
+  border-color: var(--frankly-border);
+  box-shadow: none;
+}
+.btn-secondary:hover { background: var(--frankly-elevated); box-shadow: none; }
+
+.input:not(.input-error) { border-color: var(--frankly-border); }
+.input { background: var(--frankly-panel); color: var(--frankly-ink); border-radius: 8px; }
+.input:not(.input-error):focus {
+  border-color: var(--frankly-primary);
+  box-shadow: 0 0 0 3px rgb(204 120 92 / 15%);
+}
+.input:disabled { opacity: 0.65; }
+
+.tab-active { background: var(--frankly-selected); color: var(--frankly-ink); }
+.code-block { background: #181715; color: #faf9f5; border-radius: 12px; }
+.modal-title, .dialog-header { font-weight: 500; }
+
+html:not(.dark) .frankly-binding-row.rounded-2xl,
+.dark .frankly-binding-row.rounded-2xl {
+  background: var(--frankly-elevated);
+  border-color: var(--frankly-border);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.dark .frankly-app, .dark .frankly-auth-background, .dark .frankly-home {
+  background: var(--frankly-canvas);
+}
+.dark .frankly-app .sidebar, .dark .frankly-app .glass {
+  background: var(--frankly-surface);
+  border-color: var(--frankly-border);
+}
+.dark .frankly-app .sidebar-link { color: var(--frankly-muted); }
+.dark .frankly-app .sidebar-link:hover,
+.dark .frankly-app .sidebar-link-active {
+  background: var(--frankly-selected);
+  color: var(--frankly-ink);
+}
+.dark .frankly-stats .card > div > div:first-child {
+  background: var(--frankly-elevated);
+}
+.dark .frankly-stats .card > div > div:first-child svg { color: #d59075; }
+.dark .frankly-home-features > div { background: var(--frankly-card); box-shadow: none; }
+.dark .frankly-home-features > div > div:first-child {
+  background: var(--frankly-surface); box-shadow: none; transform: none;
+}
+.dark .frankly-home-features > div > div:first-child svg { color: #d59075; }
+
+@media (prefers-reduced-motion: reduce) {
+  .btn, .card, .glass-card, .sidebar, .sidebar-link { transition: none; }
+}
