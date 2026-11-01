@@ -324,7 +324,7 @@ onUnmounted(() => {
 <style scoped>
 .date-picker-trigger {
   @apply flex items-center gap-2;
-  @apply rounded-lg px-3 py-2 text-sm;
+  @apply px-3 text-sm;
   @apply bg-white dark:bg-dark-800;
   @apply border border-gray-200 dark:border-dark-600;
   @apply text-gray-700 dark:text-gray-300;
@@ -332,6 +332,10 @@ onUnmounted(() => {
   @apply focus:border-primary-500 focus:outline-none focus:ring-2 focus:ring-primary-500/30;
   @apply hover:border-gray-300 dark:hover:border-dark-500;
   @apply cursor-pointer;
+  min-height: var(--frankly-control-height, 2.5rem);
+  padding-block: 0.5rem;
+  line-height: 1.25rem;
+  border-radius: var(--frankly-control-radius, 0.5rem);
 }
 
 .date-picker-trigger-open {
@@ -339,6 +343,7 @@ onUnmounted(() => {
 }
 
 .date-picker-icon {
+  @apply inline-flex flex-shrink-0 items-center;
   @apply text-gray-400 dark:text-dark-400;
 }
 
@@ -347,6 +352,7 @@ onUnmounted(() => {
 }
 
 .date-picker-chevron {
+  @apply inline-flex flex-shrink-0 items-center;
   @apply text-gray-400 dark:text-dark-400;
 }
 

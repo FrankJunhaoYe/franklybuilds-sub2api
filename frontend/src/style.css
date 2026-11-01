@@ -74,7 +74,10 @@
   /* ============ 按钮样式 ============ */
   .btn {
     @apply inline-flex items-center justify-center gap-2;
-    @apply rounded-md px-4 py-2.5 text-sm font-medium;
+    @apply rounded-md px-4 py-2 text-sm font-medium;
+    min-width: var(--frankly-control-height);
+    min-height: var(--frankly-control-height);
+    line-height: 1.25rem;
     @apply transition-colors duration-150 ease-out;
     @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40 focus-visible:ring-offset-2;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
@@ -147,7 +150,10 @@
   }
 
   .btn-sm {
-    @apply rounded-lg px-3 py-1.5 text-xs;
+    @apply rounded-lg px-3 py-1 text-xs;
+    min-width: var(--frankly-control-height-compact);
+    min-height: var(--frankly-control-height-compact);
+    line-height: 1.25rem;
   }
 
   .btn-md {
@@ -155,16 +161,26 @@
   }
 
   .btn-lg {
-    @apply rounded-2xl px-6 py-3 text-base;
+    @apply rounded-2xl px-6 py-2.5 text-base;
+    min-width: var(--frankly-control-height-large);
+    min-height: var(--frankly-control-height-large);
+    line-height: 1.5rem;
   }
 
   .btn-icon {
-    @apply rounded-xl p-2.5;
+    @apply inline-flex shrink-0 items-center justify-center rounded-xl p-0;
+    width: var(--frankly-control-height);
+    min-height: var(--frankly-control-height);
+  }
+
+  .btn-icon.btn-sm {
+    width: var(--frankly-control-height-compact);
+    min-height: var(--frankly-control-height-compact);
   }
 
   /* ============ 输入框样式 ============ */
   .input {
-    @apply w-full rounded-md px-4 py-2.5 text-sm;
+    @apply w-full rounded-md px-3 py-2.5 text-sm;
     @apply bg-white dark:bg-dark-800;
     @apply border border-gray-200 dark:border-dark-600;
     @apply text-gray-900 dark:text-gray-100;
@@ -173,6 +189,26 @@
     /* Focus shifts the border to coral with a 3px 15%-alpha ring. */
     @apply focus:border-primary-500 focus:outline-none focus:ring-[3px] focus:ring-primary-500/15;
     @apply disabled:cursor-not-allowed disabled:bg-gray-100 dark:disabled:bg-dark-900;
+  }
+
+  :where(input, select).input {
+    min-height: var(--frankly-control-height);
+    padding-block: 0.5rem;
+    line-height: 1.25rem;
+  }
+
+  :where(input, select).input-sm {
+    min-height: var(--frankly-control-height-compact);
+    padding-block: 0.25rem;
+  }
+
+  /* Explicit compact heights remain usable in dense settings and toolbars. */
+  .btn:where(.h-8, .h-9),
+  .btn-icon:where(.h-8, .h-9),
+  :where(input, select).input:where(.h-8, .h-9) {
+    min-width: 0;
+    min-height: 0;
+    padding-block: 0;
   }
 
   .dark .input[type='date'],

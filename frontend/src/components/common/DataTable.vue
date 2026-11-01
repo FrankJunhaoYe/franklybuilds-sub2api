@@ -169,10 +169,10 @@
       <tbody class="table-body divide-y divide-gray-200 bg-white dark:divide-dark-700 dark:bg-dark-900">
         <!-- Loading skeleton -->
         <tr v-if="loading" v-for="i in 5" :key="i">
-          <td v-if="selectable" class="w-11 min-w-11 px-3 py-4">
+          <td v-if="selectable" class="w-11 min-w-11 px-3 py-3">
             <div class="mx-auto h-4 w-4 animate-pulse rounded bg-gray-200 dark:bg-dark-700"></div>
           </td>
-          <td v-for="column in columns" :key="column.key" :class="['whitespace-nowrap py-4', getAdaptivePaddingClass()]">
+          <td v-for="column in columns" :key="column.key" :class="['whitespace-nowrap py-3', getAdaptivePaddingClass()]">
             <div class="animate-pulse">
               <div class="h-4 w-3/4 rounded bg-gray-200 dark:bg-dark-700"></div>
             </div>
@@ -220,7 +220,7 @@
             }"
             @click="clickableRows && emit('rowClick', item.row)"
           >
-            <td v-if="selectable" class="w-11 min-w-11 px-3 py-4 text-center">
+            <td v-if="selectable" class="w-11 min-w-11 px-3 py-3 text-center">
               <input
                 type="checkbox"
                 class="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 dark:border-dark-600 dark:bg-dark-800"
@@ -235,7 +235,7 @@
               v-for="(column, colIndex) in columns"
               :key="column.key"
               :class="[
-                'whitespace-nowrap py-4 text-sm text-gray-900 dark:text-gray-100',
+                'whitespace-nowrap py-3 text-sm text-gray-900 dark:text-gray-100',
                 getAdaptivePaddingClass(),
                 getStickyColumnClass(column, colIndex),
                 column.class
@@ -953,7 +953,7 @@ defineExpose({
 <style scoped>
 /* 表格横向滚动 */
 .table-wrapper {
-  --select-col-width: 52px; /* 勾选列宽度：px-6 (24px*2) + checkbox (16px) */
+  --select-col-width: 2.75rem;
   position: relative;
   overflow-x: auto;
   overflow-y: auto;
@@ -967,11 +967,11 @@ defineExpose({
   position: sticky;
   top: 0;
   z-index: 200;
-  background-color: rgb(249 250 251);
+  background-color: theme('colors.gray.100');
 }
 
 .dark .table-wrapper .table-header {
-  background-color: rgb(31 41 55);
+  background-color: theme('colors.dark.800');
 }
 
 /* 表体保持在表头下方 */
@@ -982,14 +982,18 @@ defineExpose({
 
 /* 所有表头单元格固定在顶部 */
 .sticky-header-cell {
+  height: var(--frankly-control-height, 2.5rem);
+  padding-block: 0.5rem;
+  line-height: 1.25rem;
+  white-space: nowrap;
   position: sticky;
   top: 0;
   z-index: 210; /* 必须高于所有表体内容 */
-  background-color: rgb(249 250 251);
+  background-color: theme('colors.gray.100');
 }
 
 .dark .sticky-header-cell {
-  background-color: rgb(31 41 55);
+  background-color: theme('colors.dark.800');
 }
 
 /* Sticky 列基础样式 */
@@ -1023,22 +1027,22 @@ defineExpose({
   z-index: 220; /* 高于普通表头单元格和表体固定列 */
 }
 
-/* 表体 sticky 列背景 */
+/* 固定列保持不透明，并与普通行使用同一套主题色板。 */
 tbody .sticky-col {
-  background-color: white;
+  background-color: theme('colors.white');
 }
 
 .dark tbody .sticky-col {
-  background-color: rgb(17 24 39);
+  background-color: theme('colors.dark.900');
 }
 
 /* hover 状态保持 */
 tbody tr:hover .sticky-col {
-  background-color: rgb(249 250 251);
+  background-color: theme('colors.gray.50');
 }
 
 .dark tbody tr:hover .sticky-col {
-  background-color: rgb(31 41 55);
+  background-color: theme('colors.dark.800');
 }
 
 /* 阴影只在可滚动时显示 */

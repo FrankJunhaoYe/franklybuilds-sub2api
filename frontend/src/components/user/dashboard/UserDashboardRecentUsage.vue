@@ -1,10 +1,10 @@
 <template>
   <div class="card">
-    <div class="flex items-center justify-between border-b border-gray-100 px-6 py-4 dark:border-dark-700">
-      <h2 class="text-lg font-semibold text-gray-900 dark:text-white">{{ t('dashboard.recentUsage') }}</h2>
+    <div class="flex items-center justify-between border-b border-gray-100 px-4 py-4 dark:border-dark-700">
+      <h2 class="text-base font-semibold leading-6 text-gray-900 dark:text-white">{{ t('dashboard.recentUsage') }}</h2>
       <span class="badge badge-gray">{{ t('dashboard.last7Days') }}</span>
     </div>
-    <div class="p-6">
+    <div class="px-4 py-6">
       <div v-if="loading" class="flex items-center justify-center py-12">
         <LoadingSpinner size="lg" />
       </div>

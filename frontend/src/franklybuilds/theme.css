@@ -92,6 +92,31 @@
   --frankly-primary-active: #8d4632;
   --frankly-card: #efe9de;
   --frankly-muted: #6c6a64;
+  --frankly-control-height: 2.5rem;
+  --frankly-control-height-compact: 2rem;
+  --frankly-control-height-large: 3rem;
+  --frankly-control-radius: 0.5rem;
+  --frankly-page-gutter: 1rem;
+}
+
+@media (min-width: 768px) {
+  .frankly-app {
+    --frankly-page-gutter: 1.5rem;
+  }
+}
+
+.frankly-app .frankly-main {
+  padding: var(--frankly-page-gutter);
+}
+
+@media (min-width: 1024px) {
+  .frankly-app {
+    --frankly-sidebar-width: 13rem;
+  }
+
+  .frankly-app .sidebar-header:not(.sidebar-header-collapsed) {
+    gap: 10px;
+  }
 }
 
 /* Navigation adapts the reference's flat cream surfaces, not its marketing layout. */
@@ -106,7 +131,9 @@ html:not(.dark) .frankly-app .sidebar {
 }
 
 .frankly-app .sidebar-brand-title {
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5rem;
   letter-spacing: -0.02em;
 }
 
@@ -127,15 +154,24 @@ html:not(.dark) .frankly-app .sidebar-link {
   color: var(--frankly-muted);
 }
 
-html:not(.dark) .frankly-app .sidebar-link:hover,
-html:not(.dark) .frankly-app .sidebar-link-active,
-html:not(.dark) .frankly-app .sidebar-link-active:hover {
+html:not(.dark) .frankly-app .sidebar-link:hover {
   background: var(--frankly-card);
   color: var(--frankly-ink);
 }
 
+html:not(.dark) .frankly-app .sidebar-link-active,
+html:not(.dark) .frankly-app .sidebar-link-active:hover {
+  background: var(--frankly-selected);
+  color: var(--frankly-ink);
+}
+
 .frankly-app .sidebar-link-active {
-  font-weight: 500;
+  font-weight: 600;
+}
+
+.frankly-app .sidebar-link:focus-visible {
+  outline: 2px solid var(--frankly-primary);
+  outline-offset: 2px;
 }
 
 .frankly-app .sidebar-section-title {
@@ -219,6 +255,47 @@ html:not(.dark) .frankly-stats .card > div > div:first-child {
 
 html:not(.dark) .frankly-stats .card > div > div:first-child svg {
   color: var(--frankly-primary);
+}
+
+.frankly-stats .card > div > div:first-child {
+  flex-shrink: 0;
+}
+
+.frankly-stats .card > div > div:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.frankly-metric-value {
+  margin-block: 4px;
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  font-variant-numeric: tabular-nums;
+}
+
+.frankly-metric-featured .frankly-metric-value {
+  font-size: 1.875rem;
+}
+
+.frankly-dashboard h2,
+.frankly-dashboard h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+@media (max-width: 639px) {
+  .frankly-stats .card > div {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .frankly-metric-featured .frankly-metric-value {
+    font-size: 1.625rem;
+  }
 }
 
 html:not(.dark) .frankly-home {
@@ -332,7 +409,14 @@ body { background-color: var(--frankly-canvas); }
   background: var(--frankly-elevated);
 }
 
-.btn { border-radius: 8px; transition-property: color, background-color, border-color; }
+.btn {
+  border-radius: var(--frankly-control-radius);
+  transition-property: color, background-color, border-color;
+}
+.btn-icon {
+  border-radius: var(--frankly-control-radius);
+}
+.btn > svg, .btn-icon > svg { flex-shrink: 0; }
 .btn:active { transform: none; }
 .btn-secondary {
   background: var(--frankly-panel);
@@ -353,6 +437,7 @@ body { background-color: var(--frankly-canvas); }
 .tab-active { background: var(--frankly-selected); color: var(--frankly-ink); }
 .code-block { background: #181715; color: #faf9f5; border-radius: 12px; }
 .modal-title, .dialog-header { font-weight: 500; }
+.modal-overlay { backdrop-filter: none; }
 
 html:not(.dark) .frankly-binding-row.rounded-2xl,
 .dark .frankly-binding-row.rounded-2xl {
@@ -370,11 +455,29 @@ html:not(.dark) .frankly-binding-row.rounded-2xl,
   border-color: var(--frankly-border);
 }
 .dark .frankly-app .sidebar-link { color: var(--frankly-muted); }
-.dark .frankly-app .sidebar-link:hover,
-.dark .frankly-app .sidebar-link-active {
+.dark .frankly-app .sidebar-link:hover {
+  background: var(--frankly-elevated);
+  color: var(--frankly-ink);
+}
+.dark .frankly-app .sidebar-link-active,
+.dark .frankly-app .sidebar-link-active:hover {
   background: var(--frankly-selected);
   color: var(--frankly-ink);
 }
+
+/* Dark variants need on-dark neutrals, not the light palette's gray stops. */
+.dark :where(.frankly-app) .dark\:text-gray-400:where(
+  :not(:disabled, [aria-disabled="true"], :disabled *, [aria-disabled="true"] *)
+) {
+  color: var(--frankly-muted);
+}
+
+.dark :where(.frankly-app) .dark\:text-gray-500:where(
+  :not(:disabled, [aria-disabled="true"], :disabled *, [aria-disabled="true"] *)
+) {
+  color: #8e8b82;
+}
+
 .dark .frankly-stats .card > div > div:first-child {
   background: var(--frankly-elevated);
 }
@@ -384,6 +487,69 @@ html:not(.dark) .frankly-binding-row.rounded-2xl,
   background: var(--frankly-surface); box-shadow: none; transform: none;
 }
 .dark .frankly-home-features > div > div:first-child svg { color: #d59075; }
+
+@media (min-width: 1024px) {
+  .frankly-stats .frankly-metric-value {
+    font-size: 1.5rem;
+    font-weight: 600;
+    line-height: 2rem;
+    color: var(--frankly-ink);
+  }
+
+  .frankly-stats .frankly-metric-actual {
+    color: var(--frankly-ink);
+  }
+
+  .frankly-stats .frankly-metric-cost-value {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .frankly-stats .frankly-metric-cost-value > span {
+    max-width: 100%;
+  }
+
+  .frankly-stats .frankly-metric-costs {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.25rem 0.75rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .frankly-stats .frankly-metric-costs > span {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .frankly-stats .frankly-metric-costs .frankly-metric-actual {
+    font-weight: 500;
+  }
+
+  .frankly-stats .frankly-metric-cost-label {
+    margin-inline-end: 0.25rem;
+  }
+
+  .frankly-stats .frankly-metric-secondary,
+  .frankly-stats .frankly-metric-secondary > span,
+  .frankly-stats .frankly-metric-unit {
+    font-size: 0.75rem;
+    font-weight: 400;
+    line-height: 1.125rem;
+    letter-spacing: normal;
+    color: var(--frankly-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .frankly-stats .frankly-metric-duration {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    column-gap: 0.5rem;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .btn, .card, .glass-card, .sidebar, .sidebar-link { transition: none; }

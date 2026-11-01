@@ -29,6 +29,10 @@ Design rules the system encodes, worth preserving:
 
 - Depth is color-block first. The `boxShadow` scale collapses onto one faint warm shadow, so upstream `shadow-lg` / `shadow-2xl` cannot stack elevation the system does not use. Colored glow shadows (`shadow-primary-500/30` and similar) are removed, not re-tinted.
 - Radius is hierarchical and capped: 8px controls, 12px cards, 16px largest containers.
+- Shared controls use 40px minimum height, compact row actions and pagination use 32px, and large actions use 48px. The `--frankly-control-*` tokens live in `theme.css`; base geometry stays in the components layer of `style.css` so explicit utility sizes and responsive visibility still work.
+- Page gutters are 16px on mobile and 24px from tablet widths, with 24px between major sections. The header and sidebar brand area are 64px high; page titles use 18px text with a 24px line height.
+- Table headers stay on one line at 40px high. Keep horizontal scrolling inside the table and match the checkbox column width to its sticky-column offset.
+- Desktop dashboard refinements start at 1024px: 24px primary values, smaller baseline-aligned units, labeled secondary costs, and 36px quick-action icons in flat rows. Operations uses a compact health/realtime column beside the metrics, with 12px supporting text; mobile layouts retain their existing presentation.
 - Coral is scarce. It belongs on primary actions and focus rings — not on active nav rows, which use a cream step with ink text.
 - Display headings stay weight 400-500 with negative tracking; emphasis comes from size, never a bolder serif.
 - No gradients, no `backdrop-blur`, no decorative blurred blobs.

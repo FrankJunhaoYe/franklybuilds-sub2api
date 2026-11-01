@@ -8,7 +8,7 @@
 
       <template v-else-if="stats">
         <!-- Row 1: Core Stats -->
-        <div class="frankly-stats grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="frankly-stats grid grid-cols-2 gap-4 xl:grid-cols-4">
           <!-- Total API Keys -->
           <div class="card p-4">
             <div class="flex items-center gap-3">
@@ -19,7 +19,7 @@
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.apiKeys') }}
                 </p>
-                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                <p class="frankly-metric-value text-xl font-semibold text-gray-900 dark:text-white">
                   {{ stats.total_api_keys }}
                 </p>
                 <p class="text-xs text-green-600 dark:text-green-400">
@@ -39,7 +39,7 @@
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.accounts') }}
                 </p>
-                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                <p class="frankly-metric-value text-xl font-semibold text-gray-900 dark:text-white">
                   {{ stats.total_accounts }}
                 </p>
                 <p class="text-xs">
@@ -55,7 +55,7 @@
           </div>
 
           <!-- Today Requests -->
-          <div class="card p-4">
+          <div class="frankly-metric-featured card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-green-100 p-2 dark:bg-green-900/30">
                 <Icon name="chart" size="md" class="text-green-600 dark:text-green-400" :stroke-width="2" />
@@ -64,7 +64,7 @@
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.todayRequests') }}
                 </p>
-                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                <p class="frankly-metric-value text-xl font-semibold text-gray-900 dark:text-white">
                   {{ stats.today_requests }}
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -84,7 +84,7 @@
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.users') }}
                 </p>
-                <p class="text-xl font-bold text-emerald-600 dark:text-emerald-400">
+                <p class="frankly-metric-value text-xl font-semibold text-emerald-600 dark:text-emerald-400">
                   +{{ stats.today_new_users }}
                 </p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
@@ -96,9 +96,9 @@
         </div>
 
         <!-- Row 2: Token Stats -->
-        <div class="frankly-stats grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="frankly-stats grid grid-cols-2 gap-4 xl:grid-cols-4">
           <!-- Today Tokens -->
-          <div class="card p-4">
+          <div class="frankly-metric-featured card p-4">
             <div class="flex items-center gap-3">
               <div class="rounded-lg bg-amber-100 p-2 dark:bg-amber-900/30">
                 <Icon name="cube" size="md" class="text-amber-600 dark:text-amber-400" :stroke-width="2" />
@@ -107,26 +107,26 @@
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.todayTokens') }}
                 </p>
-                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                <p class="frankly-metric-value text-xl font-semibold text-gray-900 dark:text-white">
                   {{ formatTokens(stats.today_tokens) }}
                 </p>
-                <p class="text-xs">
+                <p class="frankly-metric-costs text-xs">
                   <span
-                    class="text-green-600 dark:text-green-400"
+                    class="frankly-metric-actual text-green-600 dark:text-green-400"
                     :title="t('admin.dashboard.actual')"
-                    >${{ formatCost(stats.today_actual_cost) }}</span
+                    ><span class="frankly-metric-cost-label hidden lg:inline">{{ t('admin.dashboard.actual') }}</span>${{ formatCost(stats.today_actual_cost) }}</span
                   >
-                  <span class="text-gray-400 dark:text-gray-500"> / </span>
+                  <span class="lg:hidden text-gray-400 dark:text-gray-500"> / </span>
                   <span
-                    class="text-orange-500 dark:text-orange-400"
+                    class="frankly-metric-secondary text-orange-500 dark:text-orange-400"
                     :title="t('admin.dashboard.accountCost')"
-                    >${{ formatCost(stats.today_account_cost) }}</span
+                    ><span class="frankly-metric-cost-label hidden lg:inline">{{ t('admin.dashboard.accountCost') }}</span>${{ formatCost(stats.today_account_cost) }}</span
                   >
-                  <span class="text-gray-400 dark:text-gray-500"> / </span>
+                  <span class="lg:hidden text-gray-400 dark:text-gray-500"> / </span>
                   <span
-                    class="text-gray-400 dark:text-gray-500"
+                    class="frankly-metric-secondary text-gray-400 dark:text-gray-500"
                     :title="t('admin.dashboard.standard')"
-                    >${{ formatCost(stats.today_cost) }}</span
+                    ><span class="frankly-metric-cost-label hidden lg:inline">{{ t('admin.dashboard.standard') }}</span>${{ formatCost(stats.today_cost) }}</span
                   >
                 </p>
               </div>
@@ -143,26 +143,26 @@
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.totalTokens') }}
                 </p>
-                <p class="text-xl font-bold text-gray-900 dark:text-white">
+                <p class="frankly-metric-value text-xl font-semibold text-gray-900 dark:text-white">
                   {{ formatTokens(stats.total_tokens) }}
                 </p>
-                <p class="text-xs">
+                <p class="frankly-metric-costs text-xs">
                   <span
-                    class="text-green-600 dark:text-green-400"
+                    class="frankly-metric-actual text-green-600 dark:text-green-400"
                     :title="t('admin.dashboard.actual')"
-                    >${{ formatCost(stats.total_actual_cost) }}</span
+                    ><span class="frankly-metric-cost-label hidden lg:inline">{{ t('admin.dashboard.actual') }}</span>${{ formatCost(stats.total_actual_cost) }}</span
                   >
-                  <span class="text-gray-400 dark:text-gray-500"> / </span>
+                  <span class="lg:hidden text-gray-400 dark:text-gray-500"> / </span>
                   <span
-                    class="text-orange-500 dark:text-orange-400"
+                    class="frankly-metric-secondary text-orange-500 dark:text-orange-400"
                     :title="t('admin.dashboard.accountCost')"
-                    >${{ formatCost(stats.total_account_cost) }}</span
+                    ><span class="frankly-metric-cost-label hidden lg:inline">{{ t('admin.dashboard.accountCost') }}</span>${{ formatCost(stats.total_account_cost) }}</span
                   >
-                  <span class="text-gray-400 dark:text-gray-500"> / </span>
+                  <span class="lg:hidden text-gray-400 dark:text-gray-500"> / </span>
                   <span
-                    class="text-gray-400 dark:text-gray-500"
+                    class="frankly-metric-secondary text-gray-400 dark:text-gray-500"
                     :title="t('admin.dashboard.standard')"
-                    >${{ formatCost(stats.total_cost) }}</span
+                    ><span class="frankly-metric-cost-label hidden lg:inline">{{ t('admin.dashboard.standard') }}</span>${{ formatCost(stats.total_cost) }}</span
                   >
                 </p>
               </div>
@@ -180,16 +180,16 @@
                   {{ t('admin.dashboard.performance') }}
                 </p>
                 <div class="flex items-baseline gap-2">
-                  <p class="text-xl font-bold text-gray-900 dark:text-white">
+                  <p class="frankly-metric-value text-xl font-semibold text-gray-900 dark:text-white">
                     {{ formatTokens(stats.rpm) }}
                   </p>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">RPM</span>
+                  <span class="frankly-metric-unit text-xs text-gray-500 dark:text-gray-400">RPM</span>
                 </div>
                 <div class="flex items-baseline gap-2">
-                  <p class="text-sm font-semibold text-violet-600 dark:text-violet-400">
+                  <p class="frankly-metric-secondary text-sm font-semibold text-violet-600 dark:text-violet-400">
                     {{ formatTokens(stats.tpm) }}
                   </p>
-                  <span class="text-xs text-gray-500 dark:text-gray-400">TPM</span>
+                  <span class="frankly-metric-unit text-xs text-gray-500 dark:text-gray-400">TPM</span>
                 </div>
               </div>
             </div>
@@ -205,9 +205,7 @@
                 <p class="text-xs font-medium text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.avgResponse') }}
                 </p>
-                <p class="text-xl font-bold text-gray-900 dark:text-white">
-                  {{ formatDuration(stats.average_duration_ms) }}
-                </p>
+                <p class="frankly-metric-value frankly-metric-duration text-xl font-semibold text-gray-900 dark:text-white"><span v-for="(part, index) in formatDuration(stats.average_duration_ms).split(/(ms|s)$/).filter(Boolean)" :key="index" :class="index > 0 ? 'frankly-metric-unit' : ''">{{ part }}</span></p>
                 <p class="text-xs text-gray-500 dark:text-gray-400">
                   {{ stats.active_users }} {{ t('admin.dashboard.activeUsers') }}
                 </p>
@@ -217,58 +215,56 @@
         </div>
 
         <!-- Quick Actions -->
-        <div class="card p-4">
-          <div class="mb-3 flex items-center justify-between">
-            <h2 class="text-sm font-semibold text-gray-900 dark:text-white">
-              {{ t('admin.dashboard.quickActions') }}
-            </h2>
-          </div>
-          <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-6">
+          <h2 class="shrink-0 text-sm font-semibold text-gray-900 dark:text-white">
+            {{ t('admin.dashboard.quickActions') }}
+          </h2>
+          <div class="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap">
             <button
               v-if="canUseBatchImage"
               type="button"
-              class="group flex items-center gap-3 rounded-lg bg-gray-50 p-3 text-left transition-colors hover:bg-sky-50 dark:bg-dark-800/50 dark:hover:bg-sky-900/20"
+              class="group flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-left transition-colors hover:bg-gray-100 dark:border-dark-700 dark:bg-dark-800/50 dark:hover:bg-dark-800 sm:w-80"
               @click="router.push('/batch-image')"
             >
-              <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-sky-100 text-sky-600 dark:bg-sky-900/30 dark:text-sky-400">
+              <span class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-primary-600 dark:bg-dark-700 dark:text-primary-400">
                 <Icon name="sparkles" size="md" :stroke-width="2" />
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block text-sm font-medium text-gray-900 dark:text-white">
                   {{ t('admin.dashboard.batchImage') }}
                 </span>
-                <span class="block text-xs text-gray-500 dark:text-gray-400">
+                <span class="block text-[13px] text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.batchImageDesc') }}
                 </span>
               </span>
-              <Icon name="chevronRight" size="sm" class="text-gray-400 group-hover:text-sky-500" />
+              <Icon name="chevronRight" size="sm" class="text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             </button>
             <button
               type="button"
-              class="group flex items-center gap-3 rounded-lg bg-gray-50 p-3 text-left transition-colors hover:bg-emerald-50 dark:bg-dark-800/50 dark:hover:bg-emerald-900/20"
+              class="group flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2.5 text-left transition-colors hover:bg-gray-100 dark:border-dark-700 dark:bg-dark-800/50 dark:hover:bg-dark-800 sm:w-80"
               @click="router.push('/admin/groups')"
             >
-              <span class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+              <span class="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-gray-100 text-primary-600 dark:bg-dark-700 dark:text-primary-400">
                 <Icon name="grid" size="md" :stroke-width="2" />
               </span>
               <span class="min-w-0 flex-1">
                 <span class="block text-sm font-medium text-gray-900 dark:text-white">
                   {{ t('admin.dashboard.groupPricing') }}
                 </span>
-                <span class="block text-xs text-gray-500 dark:text-gray-400">
+                <span class="block text-[13px] text-gray-500 dark:text-gray-400">
                   {{ t('admin.dashboard.groupPricingDesc') }}
                 </span>
               </span>
-              <Icon name="chevronRight" size="sm" class="text-gray-400 group-hover:text-emerald-500" />
+              <Icon name="chevronRight" size="sm" class="text-gray-400 group-hover:text-gray-900 dark:group-hover:text-white" />
             </button>
           </div>
         </div>
 
         <!-- Charts Section -->
-        <div class="space-y-6">
+        <div class="space-y-4">
           <!-- Date Range Filter -->
-          <div class="card p-4">
-            <div class="flex flex-wrap items-center gap-4">
+          <div class="border-t border-gray-200 pt-5 dark:border-dark-700">
+            <div class="flex flex-wrap items-center gap-3">
               <div class="flex items-center gap-2">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
                   >{{ t('admin.dashboard.timeRange') }}:</span
@@ -282,7 +278,7 @@
               <button @click="loadDashboardStats" :disabled="chartsLoading" class="btn btn-secondary">
                 {{ t('common.refresh') }}
               </button>
-              <div class="ml-auto flex items-center gap-2">
+              <div class="flex items-center gap-2 sm:ml-auto">
                 <span class="text-sm font-medium text-gray-700 dark:text-gray-300"
                   >{{ t('admin.dashboard.granularity') }}:</span
                 >

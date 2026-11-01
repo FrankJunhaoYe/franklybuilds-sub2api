@@ -1,13 +1,13 @@
 <template>
   <div
-    class="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 dark:border-dark-700 dark:bg-dark-800 sm:px-6"
+    class="frankly-pagination border-t border-gray-200 bg-white dark:border-dark-700 dark:bg-dark-800"
   >
-    <div class="flex flex-1 items-center justify-between sm:hidden">
+    <div class="pagination-mobile flex flex-1 items-center justify-between sm:hidden">
       <!-- Mobile pagination -->
       <button
         @click="goToPage(page - 1)"
         :disabled="page === 1"
-        class="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600"
+        class="pagination-control relative inline-flex items-center rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600"
       >
         {{ t('pagination.previous') }}
       </button>
@@ -17,15 +17,15 @@
       <button
         @click="goToPage(page + 1)"
         :disabled="page === totalPages"
-        class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600"
+        class="pagination-control relative inline-flex items-center rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-200 dark:hover:bg-dark-600"
       >
         {{ t('pagination.next') }}
       </button>
     </div>
 
-    <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+    <div class="pagination-desktop hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
       <!-- Desktop pagination info -->
-      <div class="flex items-center space-x-4">
+      <div class="pagination-details">
         <p class="text-sm text-gray-700 dark:text-gray-300">
           {{ t('pagination.showing') }}
           <span class="font-medium">{{ fromItem }}</span>
@@ -37,7 +37,7 @@
         </p>
 
         <!-- Page size selector -->
-        <div v-if="showPageSizeSelector" class="flex items-center space-x-2">
+        <div v-if="showPageSizeSelector" class="pagination-field">
           <span class="text-sm text-gray-700 dark:text-gray-300"
             >{{ t('pagination.perPage') }}:</span
           >
@@ -50,18 +50,18 @@
           </div>
         </div>
 
-        <div v-if="showJump" class="flex items-center space-x-2">
+        <div v-if="showJump" class="pagination-field">
           <span class="text-sm text-gray-700 dark:text-gray-300">{{ t('pagination.jumpTo') }}</span>
           <input
             v-model="jumpPage"
             type="number"
             min="1"
             :max="totalPages"
-            class="input w-20 text-sm"
+            class="pagination-control pagination-jump-input input w-20 text-sm"
             :placeholder="t('pagination.jumpPlaceholder')"
             @keyup.enter="submitJump"
           />
-          <button type="button" class="btn btn-ghost btn-sm" @click="submitJump">
+          <button type="button" class="pagination-control btn btn-ghost btn-sm" @click="submitJump">
             {{ t('pagination.jumpAction') }}
           </button>
         </div>
@@ -69,17 +69,17 @@
 
       <!-- Desktop pagination buttons -->
       <nav
-        class="relative z-0 inline-flex -space-x-px rounded-md shadow-sm"
+        class="pagination-nav relative z-0"
         aria-label="Pagination"
       >
         <!-- Previous button -->
         <button
           @click="goToPage(page - 1)"
           :disabled="page === 1"
-          class="relative inline-flex items-center rounded-l-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
+          class="pagination-control pagination-arrow relative inline-flex items-center rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
           :aria-label="t('pagination.previous')"
         >
-          <Icon name="chevronLeft" size="md" />
+          <Icon name="chevronLeft" size="sm" />
         </button>
 
         <!-- Page numbers -->
@@ -89,7 +89,7 @@
           @click="typeof pageNum === 'number' && goToPage(pageNum)"
           :disabled="typeof pageNum !== 'number'"
           :class="[
-            'relative inline-flex items-center border px-4 py-2 text-sm font-medium',
+            'pagination-control relative inline-flex items-center rounded-md border text-sm font-medium',
             pageNum === page
               ? 'z-10 border-primary-500 bg-primary-50 text-primary-600 dark:bg-primary-900/30 dark:text-primary-400'
               : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-300 dark:hover:bg-dark-600',
@@ -107,10 +107,10 @@
         <button
           @click="goToPage(page + 1)"
           :disabled="page === totalPages"
-          class="relative inline-flex items-center rounded-r-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
+          class="pagination-control pagination-arrow relative inline-flex items-center rounded-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-dark-600 dark:bg-dark-700 dark:text-gray-400 dark:hover:bg-dark-600"
           :aria-label="t('pagination.next')"
         >
-          <Icon name="chevronRight" size="md" />
+          <Icon name="chevronRight" size="sm" />
         </button>
       </nav>
     </div>
@@ -241,7 +241,76 @@ const submitJump = () => {
 </script>
 
 <style scoped>
+.frankly-pagination {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.pagination-mobile {
+  gap: 0.5rem;
+}
+
+.pagination-desktop {
+  min-width: 0;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.pagination-details {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.pagination-field {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+}
+
+.pagination-nav {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+}
+
+.frankly-pagination .pagination-control,
 .page-size-select :deep(.select-trigger) {
-  @apply px-3 py-1.5 text-sm;
+  box-sizing: border-box;
+  height: var(--frankly-control-height-compact, 2rem);
+  min-height: var(--frankly-control-height-compact, 2rem);
+  padding: 0 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.frankly-pagination .pagination-control {
+  min-width: var(--frankly-control-height-compact, 2rem);
+  flex-shrink: 0;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.frankly-pagination .pagination-arrow {
+  width: var(--frankly-control-height-compact, 2rem);
+  padding: 0;
+}
+
+.frankly-pagination .pagination-jump-input {
+  width: 5rem;
+}
+
+.page-size-select :deep(.select-icon svg) {
+  width: 1rem;
+  height: 1rem;
 }
 </style>
