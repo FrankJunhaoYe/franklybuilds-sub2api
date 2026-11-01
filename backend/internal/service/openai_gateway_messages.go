@@ -538,8 +538,8 @@ func (s *OpenAIGatewayService) ForwardAsAnthropic(
 		if promptCacheKey != "" && anthropicDigestChain != "" {
 			s.bindOpenAICompatAnthropicDigestPromptCacheKey(account, apiKeyID, anthropicDigestChain, promptCacheKey, anthropicMatchedDigestChain)
 		}
-		// 计费 tier 优先采用上游回显值；上游未回显时回退到最终出站 body（经过
-		// fast policy filter/force 之后）里的 tier。
+		// 计费 tier 采用最终出站 body（经过 fast policy filter/force 之后）
+		// 里的 tier，上游回显不改变档位。
 		if tier := resolvedOpenAIUpstreamServiceTier(c, extractOpenAIServiceTierFromBody(responsesBody)); tier != nil {
 			result.ServiceTier = tier
 		}

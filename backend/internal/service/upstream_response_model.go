@@ -219,10 +219,8 @@ func observedUpstreamResponseServiceTier(c *gin.Context) string {
 
 // resolvedOpenAIUpstreamServiceTierFromObserver preserves the final outbound
 // request tier. The observed response tier remains separate on
-// OpenAIForwardResult.UpstreamResponseServiceTier and is reconciled once, at
-// usage time, where the account protocol is available. In particular, the
-// private ChatGPT Codex backend commonly reports default even for effective
-// Fast turns, while public API response tiers remain authoritative.
+// OpenAIForwardResult.UpstreamResponseServiceTier for observation. OpenAI usage
+// billing uses the outbound request tier for both public API and OAuth accounts.
 func resolvedOpenAIUpstreamServiceTierFromObserver(_ *upstreamResponseModelObserver, outboundBodyTier *string) *string {
 	return outboundBodyTier
 }

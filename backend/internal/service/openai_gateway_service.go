@@ -258,8 +258,8 @@ type OpenAIForwardResult struct {
 	// It avoids guessing when one downstream protocol can use multiple upstream endpoints.
 	UpstreamEndpoint string
 	// ServiceTier is the final tier sent upstream after policy rewriting.
-	// The upstream response declaration remains separate above and is reconciled
-	// at usage-recording time, where the credential protocol is available.
+	// OpenAI billing uses this request tier; the upstream response declaration
+	// remains separate above and does not change the charge.
 	ServiceTier *string
 	// ReasoningEffort is extracted from request body (reasoning.effort) or derived from model suffix
 	// after group policy rewriting and model-family remapping.
