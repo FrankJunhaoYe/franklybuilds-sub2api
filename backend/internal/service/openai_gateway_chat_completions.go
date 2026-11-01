@@ -434,8 +434,8 @@ func (s *OpenAIGatewayService) forwardAsChatCompletions(
 	}
 
 	// Propagate ServiceTier and ReasoningEffort to result for billing.
-	// 计费 tier 优先采用上游回显值；上游未回显时回退到最终出站 body（经过
-	// fast policy filter/force 之后）里的 tier，policy filter 删掉字段后不再
+	// 计费 tier 采用最终出站 body（经过 fast policy filter/force 之后）
+	// 里的 tier，上游回显不改变档位；policy filter 删掉字段后不再
 	// 按原请求 Fast 计费。
 	if handleErr == nil && result != nil {
 		if tier := resolvedOpenAIUpstreamServiceTier(c, extractOpenAIServiceTierFromBody(responsesBody)); tier != nil {
