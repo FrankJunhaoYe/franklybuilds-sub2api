@@ -1,9 +1,9 @@
 <template>
   <AppLayout>
-    <div class="space-y-6 pb-12">
+    <div class="min-w-0 space-y-6 pb-12">
       <!-- Ops-style elevated shell: title toolbar + filters (mirrors OpsDashboardHeader) -->
       <section
-        class="card sticky top-0 z-20 !rounded-3xl !border-0 p-0 shadow-sm ring-1 ring-gray-900/5 backdrop-blur-sm dark:!bg-dark-800 dark:ring-dark-700 supports-[backdrop-filter]:bg-white/95 dark:supports-[backdrop-filter]:bg-dark-800/95"
+        class="card top-0 z-20 !rounded-3xl !border-0 p-0 shadow-sm ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700 xl:sticky"
       >
         <header class="page-header mb-0 flex flex-wrap items-start justify-between gap-4 border-b border-gray-100 px-5 py-4 dark:border-dark-700 sm:px-6">
           <div class="min-w-0">
@@ -89,8 +89,8 @@
           </div>
         </div>
 
-        <!-- Single compact toolbar row: range · filters · view controls -->
-        <div class="monitor-toolbar flex flex-nowrap items-center gap-1.5 overflow-x-auto px-4 py-3 sm:gap-2 sm:px-5">
+        <!-- Wrap controls within the available content width, including beside the sidebar. -->
+        <div class="monitor-toolbar flex min-w-0 flex-wrap items-center gap-2 px-4 py-3 sm:px-5">
           <div
             class="tabs inline-flex shrink-0"
             role="group"
@@ -147,7 +147,7 @@
             v-model="matrixGroupBy"
             :options="matrixGroupOptions"
             :placeholder="t('channelMonitorV2.groupBy.label')"
-            class="monitor-toolbar-select w-[7.5rem] shrink-0 sm:w-[8.5rem]"
+            class="monitor-toolbar-select w-full min-w-0 sm:w-56 sm:shrink-0"
           />
 
           <div
@@ -175,7 +175,7 @@
 
           <div
             v-if="trendView === 'pulse'"
-            class="tabs inline-flex shrink-0"
+            class="tabs inline-flex min-w-0 flex-wrap"
             role="group"
             :aria-label="t('channelMonitorV2.healthMode.label')"
           >
@@ -197,7 +197,7 @@
       <section
         v-if="snapshot"
         class="grid grid-cols-2 gap-3 sm:grid-cols-3"
-        :class="showThroughput ? 'xl:grid-cols-5' : 'xl:grid-cols-4'"
+        :class="showThroughput ? 'xl:grid-cols-5' : 'xl:grid-cols-3'"
         :aria-label="t('channelMonitorV2.summaryAria')"
       >
         <MetricCell
@@ -237,11 +237,11 @@
       <section
         v-else-if="loading"
         class="grid grid-cols-2 gap-3 sm:grid-cols-3"
-        :class="showThroughput ? 'xl:grid-cols-5' : 'xl:grid-cols-4'"
+        :class="showThroughput ? 'xl:grid-cols-5' : 'xl:grid-cols-3'"
         aria-hidden="true"
       >
         <div
-          v-for="i in (showThroughput ? 5 : 4)"
+          v-for="i in (showThroughput ? 5 : 3)"
           :key="i"
           class="h-24 animate-pulse rounded-2xl bg-gray-50 dark:bg-dark-900/30"
         />
@@ -263,9 +263,24 @@
         />
         <div
           v-else-if="loading"
-          class="card flex min-h-[320px] items-center justify-center !rounded-3xl !border-0 text-sm text-gray-400 shadow-sm ring-1 ring-gray-900/5 dark:ring-dark-700"
+          class="monitor-card-skeletons grid gap-5"
+          role="status"
         >
-          <span class="animate-pulse">{{ t('common.loading') }}</span>
+          <span class="sr-only">{{ t('common.loading') }}</span>
+          <div v-for="i in 6" :key="i" class="card min-h-[280px] animate-pulse p-5" aria-hidden="true">
+            <div class="flex items-start gap-3">
+              <div class="h-9 w-9 shrink-0 rounded-xl bg-gray-100 dark:bg-dark-700" />
+              <div class="flex-1 space-y-2">
+                <div class="h-4 w-2/3 rounded bg-gray-100 dark:bg-dark-700" />
+                <div class="h-3 w-1/2 rounded bg-gray-100 dark:bg-dark-700" />
+              </div>
+            </div>
+            <div class="mt-5 grid grid-cols-2 gap-3">
+              <div v-for="j in 2" :key="j" class="h-16 rounded-xl bg-gray-50 dark:bg-dark-900/30" />
+            </div>
+            <div class="mt-6 h-8 w-1/3 rounded bg-gray-100 dark:bg-dark-700" />
+            <div class="mt-4 h-6 rounded bg-gray-100 dark:bg-dark-700" />
+          </div>
         </div>
       </div>
 
@@ -932,6 +947,10 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
+.monitor-card-skeletons {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+}
+
 .status-dot {
   display: inline-block;
   height: 0.5rem;

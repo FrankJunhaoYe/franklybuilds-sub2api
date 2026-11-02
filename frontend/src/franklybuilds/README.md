@@ -42,3 +42,11 @@ Payment-provider brand colors (Stripe, Alipay, WeChat Pay, Airwallex) are intent
 A caveat on the display face: `theme.css` previously named `Cormorant Garamond` and `EB Garamond`, but neither is bundled or loaded, so those headings always rendered Georgia. The stack now says Georgia explicitly. If the licensed Copernicus / Tiempos Headline or a self-hosted Cormorant is ever added, add the `@font-face` and prepend it to `.frankly-display`, `.frankly-auth-title`, `.frankly-home-title` and `.frankly-home-heading`.
 
 After upstream updates, run type checking, the frontend suite and production build. Visually inspect login, both dashboards, operations, profile binding, a data table and a teleported dialog in light/dark mode and at mobile widths. Automated tests do not establish visual correctness or actual browser font loading.
+
+## Passive channel status cards
+
+`views/user/ChannelStatusV2View.vue` keeps the passive monitor's filters, summary, chart and detail tables. Its `features/channel-monitor-v2/RelayPulseMatrix.vue` now presents each existing matrix row as a card, using the active monitor's identity / metrics / history layout. The grid responds to available content width, including the sidebar; filter controls wrap on narrow screens. The active monitor is unchanged.
+
+This is a frontend presentation change: the V2 endpoints, grouping dimensions, health calculation, time buckets and visibility settings still own the data contract. Preserve the throughput visibility flag and privacy-safe metrics; zeroed absolute counts in user responses do not by themselves mean a channel has no traffic. History blocks support hover, keyboard focus and tap, with viewport-contained tooltips. Wheel zoom applies only over history blocks so the rest of the cards remain normally scrollable.
+
+When merging upstream changes to this surface, verify `channel-monitor-v2` tests, the V1/V2 mode tests and locale completeness, then check populated, empty and loading states in both themes and at phone, tablet and desktop widths. Keep the Chinese and English card labels aligned.

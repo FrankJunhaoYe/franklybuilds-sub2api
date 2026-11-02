@@ -14,7 +14,7 @@ export default {
     },
     timeRange: '时间范围',
     clearFilters: '重置',
-    refreshingFilters: '筛选条件已变化，正在刷新矩阵、趋势和明细…',
+    refreshingFilters: '筛选条件已变化，正在刷新卡片、趋势和明细…',
     switchingData: '正在切换筛选数据…',
     summaryAria: '筛选范围整体汇总',
     loadFailed: '渠道监控加载失败',
@@ -30,7 +30,7 @@ export default {
     groupBy: {
       label: '展示维度', platform: '平台', platformGroup: '平台 / 分组', platformModel: '平台 / 模型', platformGroupModel: '平台 / 分组 / 模型'
     },
-    trendView: { label: '趋势视图', pulse: '色块矩阵', line: '折线图' },
+    trendView: { label: '趋势视图', pulse: '状态卡片', line: '折线图' },
     healthMode: { label: '健康显示', overall: '综合', success: '错误率', ttft: '首 Token', cache: '缓存率' },
     tabs: { aria: '明细维度', models: '模型', errors: '错误原因', users: '用户排行' },
     metrics: {
@@ -59,6 +59,17 @@ export default {
     table: { platformModel: '平台 / 模型', rank: '排名', user: '用户' },
     empty: { title: '没有可展示的数据', description: '尝试调整时间范围或筛选条件' },
     bucket: { minutes: '{count} 分钟粒度', hours: '{count} 小时粒度', days: '{count} 天粒度' },
+    cards: {
+      title: '渠道状态',
+      description: '按渠道查看健康状态与历史趋势，悬停或点按色块查看明细',
+      emptyTitle: '当前筛选窗口没有渠道数据',
+      history: '历史状态',
+      healthy: '健康',
+      warning: '需关注',
+      critical: '异常',
+      unknown: '未知',
+      zoomHint: '在历史色块上滚动缩放',
+    },
     matrix: {
       title: '可用性趋势', description: '每行是一种渠道组合，每个色块代表一个统计区间；悬停查看明细', wheelZoom: '在色块上滚轮放大（区间变窄、色块变宽）', wheelZoomX: '在色块上滚轮放大（区间变窄、色块变宽）', dimension: '渠道维度', emptyTitle: '当前筛选窗口没有矩阵数据', legendAria: '健康分数图例', bad: '差', good: '好', healthyLegend: '健康 (≥80)', warningLegend: '需关注 (50–79)', criticalLegend: '异常 (<50)', unknownLegend: '无流量 / 样本不足', noTraffic: '该区间无流量', noTrafficAt: '{time} · 无流量', scoreLine: '健康分 {score}', resetZoom: '重置缩放'
     },
@@ -93,7 +104,7 @@ export default {
       enableTitle: '启用 V2 汇总',
       enableHint: '在系统模式为 V2 时生效；关闭后仅停止本配置的汇总，系统模式开关仍在「功能开关」',
       refreshTitle: '汇总频率',
-      refreshHint: '影响矩阵时间粒度与刷新节奏',
+      refreshHint: '影响历史状态的时间粒度与刷新节奏',
       refreshAria: '汇总频率',
       selectPlatform: '选择平台',
       addPlatform: '添加平台',
@@ -127,7 +138,7 @@ export default {
       userContractTitle: '用户端展示约定',
       userContract: {
         health: '健康色三指标：错误率 60% + 首 Token P50 20% + 缓存率 20%（阈值可在上方配置）',
-        trend: '趋势可切换色块矩阵 / 折线图（错误率 · 缓存率 · 首 Token）',
+        trend: '趋势可切换状态卡片 / 折线图（错误率 · 缓存率 · 首 Token）',
         latency: '延迟展示 AVG · P50 · P90；不展示绝对请求数 / 错误数',
         models: '模型列表留空时展示真实模型名，不会全部归入「其他」',
       },
