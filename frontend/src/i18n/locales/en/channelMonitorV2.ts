@@ -14,7 +14,7 @@ export default {
     },
     timeRange: 'Time range',
     clearFilters: 'Reset',
-    refreshingFilters: 'Filters changed; refreshing matrix, trend, and details…',
+    refreshingFilters: 'Filters changed; refreshing cards, trend, and details…',
     switchingData: 'Switching filtered data…',
     summaryAria: 'Selected range summary',
     loadFailed: 'Failed to load channel monitor',
@@ -30,7 +30,7 @@ export default {
     groupBy: {
       label: 'Group by', platform: 'Platform', platformGroup: 'Platform / Group', platformModel: 'Platform / Model', platformGroupModel: 'Platform / Group / Model'
     },
-    trendView: { label: 'Trend view', pulse: 'Pulse matrix', line: 'Line chart' },
+    trendView: { label: 'Trend view', pulse: 'Status cards', line: 'Line chart' },
     healthMode: { label: 'Health display', overall: 'Overall', success: 'Error rate', ttft: 'First token', cache: 'Cache rate' },
     tabs: { aria: 'Detail dimension', models: 'Models', errors: 'Error reasons', users: 'User ranking' },
     metrics: {
@@ -59,6 +59,17 @@ export default {
     table: { platformModel: 'Platform / Model', rank: 'Rank', user: 'User' },
     empty: { title: 'No data to display', description: 'Try changing the time range or filters' },
     bucket: { minutes: '{count}-minute buckets', hours: '{count}-hour buckets', days: '{count}-day buckets' },
+    cards: {
+      title: 'Channel status',
+      description: 'Channel health and history. Hover or tap a block for details.',
+      emptyTitle: 'No channel data for the selected window',
+      history: 'Status history',
+      healthy: 'Healthy',
+      warning: 'Watch',
+      critical: 'Critical',
+      unknown: 'Unknown',
+      zoomHint: 'Scroll over history blocks to zoom',
+    },
     matrix: {
       title: 'Availability trend', description: 'Each row is a channel dimension and each block is an aggregate interval; hover for details', wheelZoom: 'Scroll over blocks to zoom in (narrower range, wider blocks)', wheelZoomX: 'Scroll over blocks to zoom in (narrower range, wider blocks)', dimension: 'Channel dimension', emptyTitle: 'No matrix data for the selected window', legendAria: 'Health score legend', bad: 'Bad', good: 'Good', healthyLegend: 'Healthy (≥80)', warningLegend: 'Watch (50–79)', criticalLegend: 'Critical (<50)', unknownLegend: 'No traffic / insufficient samples', noTraffic: 'No traffic in this interval', noTrafficAt: '{time} · no traffic', scoreLine: 'Health score {score}', resetZoom: 'Reset zoom'
     },
@@ -94,7 +105,7 @@ export default {
       enableHint:
         'Applies when system mode is V2. Turning this off only stops this config’s aggregation; the system mode switch remains under Feature switches.',
       refreshTitle: 'Aggregation interval',
-      refreshHint: 'Affects matrix time granularity and refresh cadence',
+      refreshHint: 'Affects history time granularity and refresh cadence',
       refreshAria: 'Aggregation interval',
       selectPlatform: 'Select a platform',
       addPlatform: 'Add platform',
@@ -130,7 +141,7 @@ export default {
       userContractTitle: 'User-facing display contract',
       userContract: {
         health: 'Health color weights: error rate 60% + first-token P50 20% + cache rate 20% (thresholds configurable above)',
-        trend: 'Trend can switch between pulse matrix and line chart (error · cache · first token)',
+        trend: 'Trend can switch between status cards and line chart (error · cache · first token)',
         latency: 'Latency shows AVG · P50 · P90; absolute request / error counts are not shown',
         models: 'Empty model lists show real names and never dump everything into “Other”',
       },

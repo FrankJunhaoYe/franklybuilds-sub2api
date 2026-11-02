@@ -45,17 +45,10 @@ describe('channel-monitor-v2 design system structure', () => {
     expect(src).toContain('MonitorTrendChart')
   })
 
-  it('RelayPulseMatrix uses card chrome, matrix scroll, and hover tooltips (no click modal)', () => {
+  it('RelayPulseMatrix uses project cards and floating tooltips (no click modal)', () => {
     const src = read('features/channel-monitor-v2/RelayPulseMatrix.vue')
-    expect(src).toContain('class="card')
-    expect(src).toContain('card-header')
-    expect(src).toContain('card-body')
-    expect(src).toContain('matrix-scroll')
-    expect(src).toMatch(/max-h-\[min\(42vh/)
-    expect(src).toContain('overflow-auto')
-    expect(src).toContain('pulse-tooltip')
-    expect(src).toContain('rounded-3xl')
-    expect(src).toContain('ring-1 ring-gray-900/5')
+    expect(src).toContain('monitor-card card')
+    expect(src).toContain('matrix-floating-tooltip')
     expect(src).not.toContain('modal-overlay')
     expect(src).not.toContain('modal-content')
   })
