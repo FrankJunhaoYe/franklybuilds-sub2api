@@ -95,6 +95,16 @@ func ProxyID(v int64) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldProxyID, v))
 }
 
+// SupplierID applies equality check predicate on the "supplier_id" field. It's identical to SupplierIDEQ.
+func SupplierID(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSupplierID, v))
+}
+
+// SupplierDisabled applies equality check predicate on the "supplier_disabled" field. It's identical to SupplierDisabledEQ.
+func SupplierDisabled(v bool) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSupplierDisabled, v))
+}
+
 // ProxyFallbackOriginID applies equality check predicate on the "proxy_fallback_origin_id" field. It's identical to ProxyFallbackOriginIDEQ.
 func ProxyFallbackOriginID(v int64) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldProxyFallbackOriginID, v))
@@ -623,6 +633,46 @@ func ProxyIDIsNil() predicate.Account {
 // ProxyIDNotNil applies the NotNil predicate on the "proxy_id" field.
 func ProxyIDNotNil() predicate.Account {
 	return predicate.Account(sql.FieldNotNull(FieldProxyID))
+}
+
+// SupplierIDEQ applies the EQ predicate on the "supplier_id" field.
+func SupplierIDEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSupplierID, v))
+}
+
+// SupplierIDNEQ applies the NEQ predicate on the "supplier_id" field.
+func SupplierIDNEQ(v int64) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSupplierID, v))
+}
+
+// SupplierIDIn applies the In predicate on the "supplier_id" field.
+func SupplierIDIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldIn(FieldSupplierID, vs...))
+}
+
+// SupplierIDNotIn applies the NotIn predicate on the "supplier_id" field.
+func SupplierIDNotIn(vs ...int64) predicate.Account {
+	return predicate.Account(sql.FieldNotIn(FieldSupplierID, vs...))
+}
+
+// SupplierIDIsNil applies the IsNil predicate on the "supplier_id" field.
+func SupplierIDIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldSupplierID))
+}
+
+// SupplierIDNotNil applies the NotNil predicate on the "supplier_id" field.
+func SupplierIDNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldSupplierID))
+}
+
+// SupplierDisabledEQ applies the EQ predicate on the "supplier_disabled" field.
+func SupplierDisabledEQ(v bool) predicate.Account {
+	return predicate.Account(sql.FieldEQ(FieldSupplierDisabled, v))
+}
+
+// SupplierDisabledNEQ applies the NEQ predicate on the "supplier_disabled" field.
+func SupplierDisabledNEQ(v bool) predicate.Account {
+	return predicate.Account(sql.FieldNEQ(FieldSupplierDisabled, v))
 }
 
 // ProxyFallbackOriginIDEQ applies the EQ predicate on the "proxy_fallback_origin_id" field.
@@ -1643,6 +1693,29 @@ func HasProxy() predicate.Account {
 func HasProxyWith(preds ...predicate.Proxy) predicate.Account {
 	return predicate.Account(func(s *sql.Selector) {
 		step := newProxyStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasSupplier applies the HasEdge predicate on the "supplier" edge.
+func HasSupplier() predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, SupplierTable, SupplierColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasSupplierWith applies the HasEdge predicate on the "supplier" edge with a given conditions (other predicates).
+func HasSupplierWith(preds ...predicate.Supplier) predicate.Account {
+	return predicate.Account(func(s *sql.Selector) {
+		step := newSupplierStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

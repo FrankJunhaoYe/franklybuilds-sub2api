@@ -336,6 +336,40 @@ describe('EditAccountModal', () => {
 
   afterEach(() => vi.useRealTimers())
 
+  it('keeps supplier ownership and the managed URL without resubmitting a saved secret', async () => {
+    const account = { ...buildAccount(), supplier_id: 7, credentials_status: { has_api_key: true } }
+    delete account.credentials.api_key
+    updateAccountMock.mockReset().mockResolvedValue(account)
+    const wrapper = mountModal(account)
+    await wrapper.setProps({ suppliers: [{
+      id: 7, name: 'Relay', base_url: 'https://relay.example', status: 'active', notes: '', account_count: 1,
+      balance: null, balance_status: 'unknown', has_balance_api_key: false
+    }] })
+    const readonlyURL = wrapper.findAll<HTMLInputElement>('input[readonly]').find(input => input.element.value === 'https://relay.example')
+    expect(readonlyURL).toBeDefined()
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    expect(updateAccountMock).toHaveBeenCalledWith(account.id, expect.objectContaining({
+      supplier_id: 7, credentials: expect.objectContaining({ base_url: 'https://relay.example' })
+    }))
+    expect(updateAccountMock.mock.calls[0][1].credentials).not.toHaveProperty('api_key')
+    wrapper.unmount()
+  })
+
+  it('explicitly clears supplier ownership when choosing a self-owned account', async () => {
+    const account = { ...buildAccount(), supplier_id: 7 }
+    updateAccountMock.mockReset().mockResolvedValue({ ...account, supplier_id: null })
+    const wrapper = mountModal(account)
+    await wrapper.setProps({ suppliers: [{
+      id: 7, name: 'Relay', base_url: 'https://relay.example', status: 'active', notes: '', account_count: 1,
+      balance: null, balance_status: 'unknown', has_balance_api_key: false
+    }] })
+    wrapper.findComponent({ name: 'SupplierAccountField' }).vm.$emit('update:modelValue', null)
+    await wrapper.vm.$nextTick()
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+    expect(updateAccountMock).toHaveBeenCalledWith(account.id, expect.objectContaining({ supplier_id: null }))
+    wrapper.unmount()
+  })
+
   it('passes existing non-identity mappings to the whitelist selector and preserves them on save', async () => {
     const account = buildAccount()
     account.credentials.model_mapping = { 'gpt-5.2': 'gpt-5.2', 'gpt-latest': 'deepseek-chat' }

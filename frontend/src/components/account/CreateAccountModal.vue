@@ -67,6 +67,8 @@
         <p class="input-hint">{{ t('admin.accounts.notesHint') }}</p>
       </div>
 
+      <SupplierAccountField v-model="selectedSupplierID" :suppliers="suppliers" :supplier="supplier" />
+
       <!-- Platform Selection - Segmented Control Style -->
       <div>
         <label class="input-label">{{ t('admin.accounts.platform') }}</label>
@@ -267,7 +269,7 @@
       </div>
 
       <!-- Account Type Selection (Anthropic) -->
-      <div v-if="form.platform === 'anthropic'">
+      <div v-if="!selectedSupplier && (form.platform === 'anthropic')">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
         <div class="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4" data-tour="account-form-type">
           <button
@@ -397,7 +399,7 @@
       </div>
 
       <!-- Account Type Selection (OpenAI) -->
-      <div v-if="form.platform === 'openai'">
+      <div v-if="!selectedSupplier && (form.platform === 'openai')">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
         <div class="mt-2 grid grid-cols-2 gap-3" data-tour="account-form-type">
           <button
@@ -456,7 +458,7 @@
       </div>
 
       <!-- Account Type Selection (Grok) -->
-      <div v-if="form.platform === 'grok'">
+      <div v-if="!selectedSupplier && (form.platform === 'grok')">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
         <div class="mt-2 grid grid-cols-1 gap-3 sm:grid-cols-2" data-tour="account-form-type">
           <button
@@ -721,7 +723,7 @@
       </div>
 
       <!-- Account Type Selection (Gemini) -->
-      <div v-if="form.platform === 'gemini'">
+      <div v-if="!selectedSupplier && (form.platform === 'gemini')">
         <div class="flex items-center justify-between">
           <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
           <button
@@ -1105,7 +1107,7 @@
       </div>
 
       <!-- Account Type Selection (Antigravity - OAuth or Upstream) -->
-      <div v-if="form.platform === 'antigravity'">
+      <div v-if="!selectedSupplier && (form.platform === 'antigravity')">
         <label class="input-label">{{ t('admin.accounts.accountType') }}</label>
         <div class="mt-2 grid grid-cols-2 gap-3">
           <button
@@ -1180,6 +1182,7 @@
           <label class="input-label">{{ t('admin.accounts.upstream.baseUrl') }}</label>
           <input
             v-model="upstreamBaseUrl"
+            :readonly="!!selectedSupplier"
             type="text"
             required
             class="input"
@@ -1207,7 +1210,8 @@
             </p>
           </div>
           <Toggle
-            v-model="upstreamBillingAutoProbeEnabled"
+            :model-value="upstreamBillingAutoProbeEnabled"
+            @update:model-value="handleUpstreamBillingProbeChange"
             data-testid="upstream-billing-auto-probe-antigravity"
             :aria-label="t('admin.accounts.upstreamBilling.autoProbe')"
           />
@@ -1501,22 +1505,23 @@
 
       <!-- API Key input (only for apikey type, excluding Antigravity which has its own fields) -->
       <div v-if="form.type === 'apikey' && form.platform !== 'antigravity'" class="space-y-4">
-        <div v-if="!isMultiProtocolPlatform || apiProtocol !== 'adaptive'">
+        <div v-if="selectedSupplier || !isMultiProtocolPlatform || apiProtocol !== 'adaptive'">
           <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
           <input
             v-model="apiKeyBaseUrl"
+            :readonly="!!selectedSupplier"
             type="text"
             class="input"
             :placeholder="apiKeyBaseUrlPlaceholder"
           />
           <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
           <GrokBaseUrlPresets
-            v-if="form.platform === 'grok'"
+            v-if="!selectedSupplier && form.platform === 'grok'"
             class="mt-2"
             @select="apiKeyBaseUrl = $event"
           />
           <CnBaseUrlPresets
-            v-if="isCNPlatform && !isOpenCodeGoPlatform"
+            v-if="!selectedSupplier && isCNPlatform && !isOpenCodeGoPlatform"
             class="mt-2"
             :platform="cnPresetPlatform"
             :mode="cnPresetMode"
@@ -1573,7 +1578,8 @@
             </p>
           </div>
           <Toggle
-            v-model="upstreamBillingAutoProbeEnabled"
+            :model-value="upstreamBillingAutoProbeEnabled"
+            @update:model-value="handleUpstreamBillingProbeChange"
             data-testid="upstream-billing-auto-probe"
             :aria-label="t('admin.accounts.upstreamBilling.autoProbe')"
           />
@@ -1792,7 +1798,8 @@
             </div>
             <button
               type="button"
-              @click="poolModeEnabled = !poolModeEnabled"
+              data-testid="pool-mode-toggle"
+              @click="togglePoolMode"
               :class="[
                 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                 poolModeEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
@@ -2241,7 +2248,8 @@
             </div>
             <button
               type="button"
-              @click="poolModeEnabled = !poolModeEnabled"
+              data-testid="pool-mode-toggle"
+              @click="togglePoolMode"
               :class="[
                 'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
                 poolModeEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
@@ -3241,8 +3249,8 @@
       <div class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         <div>
           <label class="input-label">{{ t('admin.accounts.concurrency') }}</label>
-          <input v-model.number="form.concurrency" type="number" min="1" class="input"
-            @input="form.concurrency = Math.max(1, form.concurrency || 1)" />
+          <input v-model.number="form.concurrency" type="number" min="1" class="input" data-testid="account-concurrency"
+            @input="supplierDefaultsTouched.concurrency = true; form.concurrency = Math.max(1, form.concurrency || 1)" />
         </div>
         <div>
           <label class="input-label">{{ t('admin.accounts.loadFactor') }}</label>
@@ -3259,13 +3267,21 @@
             min="1"
             class="input"
             data-tour="account-form-priority"
+            @input="supplierDefaultsTouched.priority = true"
           />
           <p class="input-hint">{{ t('admin.accounts.priorityHint') }}</p>
         </div>
         <div>
           <label class="input-label">{{ t('admin.accounts.billingRateMultiplier') }}</label>
-          <input v-model.number="form.rate_multiplier" type="number" min="0" step="0.001" class="input" />
-          <p class="input-hint">{{ t('admin.accounts.billingRateMultiplierHint') }}</p>
+          <input v-model.number="form.rate_multiplier" type="number" min="0" step="0.001" class="input disabled:cursor-not-allowed disabled:opacity-60" data-testid="account-rate-multiplier" :disabled="form.type === 'apikey' && upstreamBillingRateSyncEnabled" @input="supplierDefaultsTouched.sync = true" />
+          <p class="input-hint">{{ t(form.type === 'apikey' && upstreamBillingRateSyncEnabled ? 'admin.accounts.upstreamBilling.syncRateManagedHint' : 'admin.accounts.billingRateMultiplierHint') }}</p>
+          <div v-if="form.type === 'apikey'" class="mt-3 flex items-center justify-between gap-3">
+            <div class="min-w-0">
+              <p class="text-xs font-medium text-gray-700 dark:text-gray-200">{{ t('admin.accounts.upstreamBilling.syncRate') }}</p>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">{{ t('admin.accounts.upstreamBilling.syncRateHint') }}</p>
+            </div>
+            <Toggle :model-value="upstreamBillingRateSyncEnabled" data-testid="upstream-billing-rate-sync" :aria-label="t('admin.accounts.upstreamBilling.syncRate')" @update:model-value="handleUpstreamBillingRateSyncChange" />
+          </div>
         </div>
       </div>
       <div class="border-t border-gray-200 pt-4 dark:border-dark-600">
@@ -4112,6 +4128,8 @@
 </template>
 
 <script setup lang="ts">
+import SupplierAccountField from './SupplierAccountField.vue'
+import type { Supplier } from '@/api/admin/suppliers'
 import { ref, reactive, computed, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -4316,6 +4334,8 @@ interface Props {
   show: boolean
   proxies: Proxy[]
   groups: AdminGroup[]
+  suppliers?: Supplier[]
+  supplier?: Supplier | null
 }
 
 const props = defineProps<Props>()
@@ -4324,6 +4344,8 @@ const emit = defineEmits<{
   created: []
 }>()
 
+const selectedSupplierID = ref<number | null>(props.supplier?.id ?? null)
+const selectedSupplier = computed(() => props.supplier ?? props.suppliers?.find(item => item.id === selectedSupplierID.value))
 const appStore = useAppStore()
 
 const hideAccountLongContextBilling = computed(() => {
@@ -4396,6 +4418,26 @@ const addMethod = ref<AddMethod>('oauth') // For oauth-based: 'oauth' or 'setup-
 const apiKeyBaseUrl = ref('https://api.anthropic.com')
 const apiKeyValue = ref('')
 const upstreamBillingAutoProbeEnabled = ref(true)
+const upstreamBillingRateSyncEnabled = ref(false)
+const supplierDefaultsTouched = reactive({ concurrency: false, priority: false, pool: false, probe: false, sync: false })
+let supplierDefaultsApplied = false
+
+function handleUpstreamBillingProbeChange(enabled: boolean) {
+  supplierDefaultsTouched.probe = true
+  upstreamBillingAutoProbeEnabled.value = enabled
+  if (!enabled) upstreamBillingRateSyncEnabled.value = false
+}
+
+function handleUpstreamBillingRateSyncChange(enabled: boolean) {
+  supplierDefaultsTouched.sync = true
+  upstreamBillingRateSyncEnabled.value = enabled
+  if (enabled) upstreamBillingAutoProbeEnabled.value = true
+}
+
+function togglePoolMode() {
+  supplierDefaultsTouched.pool = true
+  poolModeEnabled.value = !poolModeEnabled.value
+}
 
 // ── 国产供应商（Kimi / Zhipu / DeepSeek）账号类型、API 协议与端点 ──
 // 多协议供应商（国产厂商与走通用表单的供应商）的接入模式；OpenCode 用 openCodeAccountMode。
@@ -5181,7 +5223,7 @@ watch(
       accountCategory.value = 'oauth-based'
       addMethod.value = 'oauth'
       modelRestrictionMode.value = 'mapping'
-      form.concurrency = 1
+      if (!selectedSupplier.value) form.concurrency = 1
       form.load_factor = null
     }
     if (newPlatform !== 'gemini' && newPlatform !== 'anthropic' && accountCategory.value === 'service_account') {
@@ -5556,6 +5598,17 @@ const ensureAntigravityMixedChannelConfirmed = async (onConfirm: () => Promise<v
 const submitCreateAccount = async (payload: CreateAccountRequest) => {
   submitting.value = true
   try {
+    if (selectedSupplier.value) {
+      payload = { ...payload, supplier_id: selectedSupplier.value.id, credentials: { ...payload.credentials, base_url: selectedSupplier.value.base_url } }
+      delete payload.credentials.api_base_urls
+      payload.credentials.pool_mode = poolModeEnabled.value
+      if (poolModeEnabled.value) payload.credentials.pool_mode_retry_count = normalizePoolModeRetryCount(poolModeRetryCount.value)
+    }
+    if (payload.type === 'apikey') {
+      payload.upstream_billing_probe_enabled = upstreamBillingAutoProbeEnabled.value
+      payload.upstream_billing_rate_sync_enabled = upstreamBillingRateSyncEnabled.value
+      if (upstreamBillingRateSyncEnabled.value) delete payload.rate_multiplier
+    }
     const account = await adminAPI.accounts.create(withAntigravityConfirmFlag(payload))
     const modelMapping = payload.credentials.model_mapping
     const hasConcreteMappedTarget = payload.type === 'apikey' &&
@@ -5579,7 +5632,7 @@ const submitCreateAccount = async (payload: CreateAccountRequest) => {
     }
     if (
       payload.type === 'apikey' &&
-      payload.upstream_billing_probe_enabled === true
+      payload.upstream_billing_probe_enabled === true && !payload.supplier_id
     ) {
       try {
         await adminAPI.accounts.probeUpstreamBilling(account.id)
@@ -5611,6 +5664,7 @@ const submitCreateAccount = async (payload: CreateAccountRequest) => {
 const resetForm = () => {
   step.value = 1
   form.name = ''
+  selectedSupplierID.value = props.supplier?.id ?? null
   form.notes = ''
   form.platform = 'anthropic'
   form.type = 'oauth'
@@ -5633,6 +5687,9 @@ const resetForm = () => {
   apiKeyValue.value = ''
   upstreamRequestIdHeader.value = ''
   upstreamBillingAutoProbeEnabled.value = true
+  upstreamBillingRateSyncEnabled.value = false
+  supplierDefaultsApplied = false
+  Object.assign(supplierDefaultsTouched, { concurrency: false, priority: false, pool: false, probe: false, sync: false })
   editQuotaLimit.value = null
   editQuotaDailyLimit.value = null
   editQuotaWeeklyLimit.value = null
@@ -7489,4 +7546,35 @@ const handleCookieAuth = async (sessionKey: string) => {
     oauth.loading.value = false
   }
 }
+
+watch(
+  [selectedSupplier, () => props.show, () => form.platform, accountCategory, antigravityAccountType, apiProtocol, accountMode, openCodeAccountMode],
+  () => {
+    if (!props.show) return
+    if (!selectedSupplier.value) {
+      if (supplierDefaultsApplied) {
+        if (!supplierDefaultsTouched.concurrency) form.concurrency = form.platform === 'grok' ? 1 : 10
+        if (!supplierDefaultsTouched.pool) poolModeEnabled.value = false
+        if (!supplierDefaultsTouched.sync) upstreamBillingRateSyncEnabled.value = false
+        supplierDefaultsApplied = false
+      }
+      return
+    }
+    if (!supplierDefaultsApplied) {
+      if (!supplierDefaultsTouched.concurrency) form.concurrency = 100
+      if (!supplierDefaultsTouched.priority) form.priority = 1
+      if (!supplierDefaultsTouched.pool) poolModeEnabled.value = true
+      if (!supplierDefaultsTouched.probe) upstreamBillingAutoProbeEnabled.value = true
+      if (!supplierDefaultsTouched.sync && upstreamBillingAutoProbeEnabled.value) upstreamBillingRateSyncEnabled.value = true
+      supplierDefaultsApplied = true
+    }
+    accountCategory.value = 'apikey'
+    form.type = 'apikey'
+    antigravityAccountType.value = 'upstream'
+    apiKeyBaseUrl.value = selectedSupplier.value.base_url
+    upstreamBaseUrl.value = selectedSupplier.value.base_url
+    adaptiveBaseUrls.value = { chat_completions: selectedSupplier.value.base_url, anthropic: selectedSupplier.value.base_url, responses: selectedSupplier.value.base_url }
+  },
+  { immediate: true, flush: 'post' }
+)
 </script>

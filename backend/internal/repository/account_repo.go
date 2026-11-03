@@ -129,6 +129,21 @@ func (r *accountRepository) Create(ctx context.Context, account *service.Account
 	if scoped := r.accountTransactionScope(ctx); scoped != r {
 		return scoped.Create(ctx, account)
 	}
+	if account != nil && (account.SupplierID != nil || account.ParentAccountID != nil) && dbent.TxFromContext(ctx) == nil {
+		tx, err := r.client.Tx(ctx)
+		if err != nil && !errors.Is(err, dbent.ErrTxStarted) {
+			return err
+		}
+		if tx != nil {
+			defer func() { _ = tx.Rollback() }()
+			if err := r.Create(dbent.NewTxContext(ctx, tx), account); err != nil {
+				return err
+			}
+			return tx.Commit()
+		}
+		// A repository built with tx.Client() already owns a transaction even
+		// when its caller did not also put the transaction in the context.
+	}
 	if err := createAccountRecord(ctx, r.client, account); err != nil {
 		return err
 	}
@@ -142,9 +157,16 @@ func createAccountRecord(ctx context.Context, client *dbent.Client, account *ser
 	if account == nil {
 		return service.ErrAccountNilInput
 	}
+	if account.SupplierID != nil || account.ParentAccountID != nil {
+		if err := prepareAccountSupplier(ctx, client, account); err != nil {
+			return err
+		}
+	}
 
 	builder := client.Account.Create().
 		SetName(account.Name).
+		SetNillableSupplierID(account.SupplierID).
+		SetSupplierDisabled(account.SupplierDisabled).
 		SetNillableNotes(account.Notes).
 		SetPlatform(account.Platform).
 		SetType(account.Type).
@@ -205,6 +227,9 @@ func createAccountRecord(ctx context.Context, client *dbent.Client, account *ser
 	account.ID = created.ID
 	account.CreatedAt = created.CreatedAt
 	account.UpdatedAt = created.UpdatedAt
+	if account.SupplierID != nil {
+		return invalidateSupplierBalanceForAccount(ctx, client, account.ID, false)
+	}
 	return nil
 }
 
@@ -330,6 +355,10 @@ func (r *accountRepository) GetByIDs(ctx context.Context, ids []int64) ([]*servi
 	if err != nil {
 		return nil, err
 	}
+	suppliers, err := r.loadSuppliersForAccounts(ctx, entAccounts)
+	if err != nil {
+		return nil, err
+	}
 
 	outByID := make(map[int64]*service.Account, len(entAccounts))
 	for _, entAcc := range entAccounts {
@@ -337,6 +366,7 @@ func (r *accountRepository) GetByIDs(ctx context.Context, ids []int64) ([]*servi
 		if out == nil {
 			continue
 		}
+		applyAccountSupplier(out, suppliers)
 
 		// Prefer the preloaded proxy edge when available.
 		if entAcc.Edges.Proxy != nil {
@@ -532,6 +562,14 @@ func (r *accountRepository) updateLockedAccount(
 	explicitRateSyncEnabled *bool,
 	explicitRateMultiplier *float64,
 ) (*dbent.Account, error) {
+	if account.SupplierID != nil || account.SupplierBaseURL != "" || account.ParentAccountID != nil {
+		if err := prepareAccountSupplier(ctx, client, account); err != nil {
+			return nil, err
+		}
+		if err := invalidateSupplierBalanceForAccountUpdate(ctx, client, account); err != nil {
+			return nil, err
+		}
+	}
 	extra, err := lockAndMergeAccountProbeExtra(ctx, client, account, explicitProbeEnabled, explicitRateSyncEnabled)
 	if err != nil {
 		return nil, err
@@ -545,6 +583,7 @@ func (r *accountRepository) updateLockedAccount(
 
 	builder := client.Account.UpdateOneID(account.ID).
 		SetName(account.Name).
+		SetSupplierDisabled(account.SupplierDisabled).
 		SetNillableNotes(account.Notes).
 		SetPlatform(account.Platform).
 		SetType(account.Type).
@@ -556,6 +595,11 @@ func (r *accountRepository) updateLockedAccount(
 		SetErrorMessage(account.ErrorMessage).
 		SetSchedulable(schedulable).
 		SetAutoPauseOnExpired(account.AutoPauseOnExpired)
+	if account.SupplierID == nil {
+		builder.ClearSupplierID()
+	} else {
+		builder.SetSupplierID(*account.SupplierID)
+	}
 
 	if explicitRateMultiplier != nil {
 		builder.SetRateMultiplier(*explicitRateMultiplier)
@@ -895,9 +939,17 @@ func (r *accountRepository) UpdateCredentials(ctx context.Context, id int64, cre
 		}
 	}
 	result, err := client.ExecContext(ctx, `
+		WITH supplier_balances AS (
+			UPDATE suppliers s SET revision = revision + 1, balance = NULL, balance_status = 'unknown',
+				balance_error = '', balance_updated_at = NULL, balance_checked_at = NULL
+			WHERE s.deleted_at IS NULL AND EXISTS (SELECT 1 FROM accounts a
+				WHERE a.id = $2 AND a.deleted_at IS NULL AND `+supplierBalanceSourceAccountSQL+`
+				AND a.credentials IS DISTINCT FROM $1::jsonb)
+			RETURNING s.id
+		)
 		UPDATE accounts
 		SET
-			credentials = $1::jsonb,
+			credentials = CASE WHEN supplier_id IS NULL THEN $1::jsonb ELSE $1::jsonb || jsonb_build_object('base_url', credentials -> 'base_url') END,
 			extra = CASE
 				-- 正确性依赖（非防御）：OpenCode 分支必须先于 Ollama 分支求值。两分支
 				-- 的 WHEN 并不互斥：Ollama 分支的守卫是宽谓词——NOT(ollamaMatch(old)
@@ -1011,6 +1063,9 @@ func (r *accountRepository) Delete(ctx context.Context, id int64) error {
 		txClient = r.client
 	}
 
+	if err := invalidateSupplierBalanceForAccount(ctx, txClient, id, true); err != nil {
+		return err
+	}
 	if _, err := txClient.AccountGroup.Delete().Where(dbaccountgroup.AccountIDEQ(id)).Exec(ctx); err != nil {
 		return err
 	}
@@ -1052,6 +1107,7 @@ func (r *accountRepository) accountListFilteredQuery(platform, accountType, stat
 			q = q.Where(
 				dbaccount.StatusEQ(status),
 				dbaccount.SchedulableEQ(true),
+				dbaccount.SupplierDisabledEQ(false),
 				dbaccount.Or(
 					dbaccount.RateLimitResetAtIsNil(),
 					dbaccount.RateLimitResetAtLTE(time.Now()),
@@ -1134,7 +1190,7 @@ func (r *accountRepository) accountListFilteredQuery(platform, accountType, stat
 }
 
 func (r *accountRepository) ListWithFilters(ctx context.Context, params pagination.PaginationParams, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, *pagination.PaginationResult, error) {
-	q := r.accountListFilteredQuery(platform, accountType, status, search, groupID, privacyMode)
+	q := supplierAccountFilter(ctx, r.accountListFilteredQuery(platform, accountType, status, search, groupID, privacyMode))
 	// Clone before Count so interceptor-appended predicates (SoftDeleteMixin's
 	// deleted_at IS NULL) don't accumulate on the shared builder and pollute the
 	// subsequent list query. Same pattern used in group_repo/promo_code_repo/user_repo
@@ -1164,7 +1220,7 @@ func (r *accountRepository) ListWithFilters(ctx context.Context, params paginati
 }
 
 func (r *accountRepository) ListAllWithFilters(ctx context.Context, platform, accountType, status, search string, groupID int64, privacyMode string) ([]service.Account, error) {
-	accounts, err := r.accountListFilteredQuery(platform, accountType, status, search, groupID, privacyMode).All(ctx)
+	accounts, err := supplierAccountFilter(ctx, r.accountListFilteredQuery(platform, accountType, status, search, groupID, privacyMode)).All(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -1194,6 +1250,8 @@ func (r *accountRepository) ListOpsAccountsForStats(ctx context.Context, platfor
 			dbaccount.FieldStatus,
 			dbaccount.FieldErrorMessage,
 			dbaccount.FieldSchedulable,
+			dbaccount.FieldSupplierID,
+			dbaccount.FieldSupplierDisabled,
 			dbaccount.FieldRateLimitResetAt,
 			dbaccount.FieldOverloadUntil,
 			dbaccount.FieldTempUnschedulableUntil,
@@ -2070,6 +2128,7 @@ func (r *accountRepository) schedulableAccountsQuery(now time.Time) *dbent.Accou
 		Where(
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			dbaccount.SupplierDisabledEQ(false),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
 			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
@@ -2128,6 +2187,7 @@ func (r *accountRepository) ListSchedulableCapacityByGroupIDs(ctx context.Contex
 			AND a.deleted_at IS NULL
 			AND a.status = $2
 			AND a.schedulable = TRUE
+			AND a.supplier_disabled = FALSE
 			AND (a.temp_unschedulable_until IS NULL OR a.temp_unschedulable_until <= $3)
 			AND (a.expires_at IS NULL OR a.expires_at > $3 OR a.auto_pause_on_expired = FALSE)
 			AND (a.overload_until IS NULL OR a.overload_until <= $3)
@@ -2176,6 +2236,7 @@ func (r *accountRepository) ListSchedulableByPlatform(ctx context.Context, platf
 			dbaccount.PlatformEQ(platform),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			dbaccount.SupplierDisabledEQ(false),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
 			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
@@ -2210,6 +2271,7 @@ func (r *accountRepository) ListSchedulableByPlatforms(ctx context.Context, plat
 			dbaccount.PlatformIn(platforms...),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			dbaccount.SupplierDisabledEQ(false),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
 			dbaccount.Or(dbaccount.OverloadUntilIsNil(), dbaccount.OverloadUntilLTE(now)),
@@ -2230,6 +2292,7 @@ func (r *accountRepository) ListSchedulableUngroupedByPlatform(ctx context.Conte
 			dbaccount.PlatformEQ(platform),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			dbaccount.SupplierDisabledEQ(false),
 			dbaccount.Not(dbaccount.HasAccountGroups()),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
@@ -2254,6 +2317,7 @@ func (r *accountRepository) ListSchedulableUngroupedByPlatforms(ctx context.Cont
 			dbaccount.PlatformIn(platforms...),
 			dbaccount.StatusEQ(service.StatusActive),
 			dbaccount.SchedulableEQ(true),
+			dbaccount.SupplierDisabledEQ(false),
 			dbaccount.Not(dbaccount.HasAccountGroups()),
 			tempUnschedulablePredicate(),
 			notExpiredPredicate(now),
@@ -2305,6 +2369,7 @@ func (r *accountRepository) ListModelAvailabilityCandidates(
 	preds := []dbpredicate.Account{
 		dbaccount.StatusEQ(service.StatusActive),
 		dbaccount.SchedulableEQ(true),
+		dbaccount.SupplierDisabledEQ(false),
 		dbaccount.PlatformIn(platforms...),
 	}
 	if !includeGrouped {
@@ -3142,7 +3207,9 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 			return 0, err
 		}
 		credentialPlaceholder = "$" + itoa(idx)
-		setClauses = append(setClauses, "credentials = COALESCE(credentials, '{}'::jsonb) || "+credentialPlaceholder+"::jsonb")
+		// A bulk payload must not override a supplier's canonical URL. Preserve the
+		// row's current URL so a concurrent supplier edit cannot be reverted.
+		setClauses = append(setClauses, "credentials = CASE WHEN supplier_id IS NULL THEN COALESCE(credentials, '{}'::jsonb) || "+credentialPlaceholder+"::jsonb ELSE (COALESCE(credentials, '{}'::jsonb) || "+credentialPlaceholder+"::jsonb) || jsonb_build_object('base_url', credentials -> 'base_url') END")
 		args = append(args, payload)
 		idx++
 	}
@@ -3281,7 +3348,8 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 
 	setClauses = append(setClauses, "updated_at = NOW()")
 
-	whereClause := " WHERE id = ANY($" + itoa(idx) + ") AND deleted_at IS NULL"
+	accountIDsPlaceholder := "$" + itoa(idx)
+	whereClause := " WHERE id = ANY(" + accountIDsPlaceholder + ") AND deleted_at IS NULL"
 	args = append(args, pq.Array(ids))
 	idx++
 	if updates.ProbeEnabled != nil {
@@ -3289,6 +3357,9 @@ func (r *accountRepository) BulkUpdate(ctx context.Context, ids []int64, updates
 		args = append(args, service.AccountTypeAPIKey)
 	}
 	query := "UPDATE accounts SET " + joinClauses(setClauses, ", ") + whereClause
+	if len(updates.Credentials) > 0 || updates.ProxyID != nil {
+		query = "WITH supplier_balances AS (UPDATE suppliers s SET revision = revision + 1, balance = NULL, balance_status = 'unknown', balance_error = '', balance_updated_at = NULL, balance_checked_at = NULL WHERE s.deleted_at IS NULL AND EXISTS (SELECT 1 FROM accounts a WHERE a.id = ANY(" + accountIDsPlaceholder + ") AND a.deleted_at IS NULL AND " + supplierBalanceSourceAccountSQL + ") RETURNING s.id) " + query
+	}
 
 	baseCtx := ctx
 	contextTx := dbent.TxFromContext(ctx)
@@ -3378,7 +3449,7 @@ func (r *accountRepository) queryAccountsByGroup(ctx context.Context, groupID in
 		preds = append(preds, dbaccount.PlatformIn(opts.platforms...))
 	}
 	if opts.schedulable {
-		preds = append(preds, dbaccount.SchedulableEQ(true))
+		preds = append(preds, dbaccount.SchedulableEQ(true), dbaccount.SupplierDisabledEQ(false))
 		if !opts.ignoreTransientState {
 			now := time.Now()
 			preds = append(preds,
@@ -3432,6 +3503,10 @@ func (r *accountRepository) accountsToService(ctx context.Context, accounts []*d
 	if len(accounts) == 0 {
 		return []service.Account{}, nil
 	}
+	suppliers, err := r.loadSuppliersForAccounts(ctx, accounts)
+	if err != nil {
+		return nil, err
+	}
 
 	accountIDs := make([]int64, 0, len(accounts))
 	proxyIDs := make([]int64, 0, len(accounts))
@@ -3460,6 +3535,7 @@ func (r *accountRepository) accountsToService(ctx context.Context, accounts []*d
 		if out == nil {
 			continue
 		}
+		applyAccountSupplier(out, suppliers)
 		if acc.ProxyID != nil {
 			if proxy, ok := proxyMap[*acc.ProxyID]; ok {
 				out.Proxy = proxy
@@ -3689,6 +3765,8 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		Credentials:             copyJSONMap(m.Credentials),
 		Extra:                   copyJSONMap(m.Extra),
 		ProxyID:                 m.ProxyID,
+		SupplierID:              m.SupplierID,
+		SupplierDisabled:        m.SupplierDisabled,
 		ProxyFallbackOriginID:   m.ProxyFallbackOriginID,
 		Concurrency:             m.Concurrency,
 		Priority:                m.Priority,
@@ -3828,6 +3906,7 @@ func (r *accountRepository) ListDueUpstreamBillingProbeAccounts(ctx context.Cont
 			FROM accounts
 			WHERE deleted_at IS NULL
 				AND status = 'active'
+				AND supplier_disabled = FALSE
 				AND type = 'apikey'
 				AND extra @> '{"upstream_billing_probe_enabled": true}'::jsonb
 		), parsed AS MATERIALIZED (
@@ -4110,6 +4189,14 @@ func (r *accountRepository) ResetQuotaUsedAndClearRateLimitCooldown(ctx context.
 func (r *accountRepository) RevertProxyFallback(ctx context.Context, accountID int64) error {
 	// Probe snapshots belong to the network identity; invalidate only on a real proxy change.
 	res, err := r.sql.ExecContext(ctx, `
+		WITH supplier_balances AS (
+			UPDATE suppliers s SET revision = revision + 1, balance = NULL, balance_status = 'unknown',
+				balance_error = '', balance_updated_at = NULL, balance_checked_at = NULL
+			WHERE s.deleted_at IS NULL AND EXISTS (SELECT 1 FROM accounts a
+				WHERE a.id = $1 AND a.deleted_at IS NULL AND a.proxy_fallback_origin_id IS NOT NULL
+				AND a.proxy_id IS DISTINCT FROM a.proxy_fallback_origin_id AND `+supplierBalanceSourceAccountSQL+`)
+			RETURNING s.id
+		)
 		UPDATE accounts SET
 			extra=CASE WHEN type='apikey' AND proxy_id IS DISTINCT FROM proxy_fallback_origin_id
 				THEN extra - 'upstream_billing_probe' ELSE extra END,

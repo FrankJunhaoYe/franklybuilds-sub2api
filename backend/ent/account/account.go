@@ -36,6 +36,10 @@ const (
 	FieldExtra = "extra"
 	// FieldProxyID holds the string denoting the proxy_id field in the database.
 	FieldProxyID = "proxy_id"
+	// FieldSupplierID holds the string denoting the supplier_id field in the database.
+	FieldSupplierID = "supplier_id"
+	// FieldSupplierDisabled holds the string denoting the supplier_disabled field in the database.
+	FieldSupplierDisabled = "supplier_disabled"
 	// FieldProxyFallbackOriginID holds the string denoting the proxy_fallback_origin_id field in the database.
 	FieldProxyFallbackOriginID = "proxy_fallback_origin_id"
 	// FieldConcurrency holds the string denoting the concurrency field in the database.
@@ -82,6 +86,8 @@ const (
 	EdgeGroups = "groups"
 	// EdgeProxy holds the string denoting the proxy edge name in mutations.
 	EdgeProxy = "proxy"
+	// EdgeSupplier holds the string denoting the supplier edge name in mutations.
+	EdgeSupplier = "supplier"
 	// EdgeParent holds the string denoting the parent edge name in mutations.
 	EdgeParent = "parent"
 	// EdgeChildren holds the string denoting the children edge name in mutations.
@@ -104,6 +110,13 @@ const (
 	ProxyInverseTable = "proxies"
 	// ProxyColumn is the table column denoting the proxy relation/edge.
 	ProxyColumn = "proxy_id"
+	// SupplierTable is the table that holds the supplier relation/edge.
+	SupplierTable = "accounts"
+	// SupplierInverseTable is the table name for the Supplier entity.
+	// It exists in this package in order to avoid circular dependency with the "supplier" package.
+	SupplierInverseTable = "suppliers"
+	// SupplierColumn is the table column denoting the supplier relation/edge.
+	SupplierColumn = "supplier_id"
 	// ParentTable is the table that holds the parent relation/edge.
 	ParentTable = "accounts"
 	// ParentColumn is the table column denoting the parent relation/edge.
@@ -141,6 +154,8 @@ var Columns = []string{
 	FieldCredentials,
 	FieldExtra,
 	FieldProxyID,
+	FieldSupplierID,
+	FieldSupplierDisabled,
 	FieldProxyFallbackOriginID,
 	FieldConcurrency,
 	FieldLoadFactor,
@@ -204,6 +219,8 @@ var (
 	DefaultCredentials func() map[string]interface{}
 	// DefaultExtra holds the default value on creation for the "extra" field.
 	DefaultExtra func() map[string]interface{}
+	// DefaultSupplierDisabled holds the default value on creation for the "supplier_disabled" field.
+	DefaultSupplierDisabled bool
 	// DefaultConcurrency holds the default value on creation for the "concurrency" field.
 	DefaultConcurrency int
 	// DefaultPriority holds the default value on creation for the "priority" field.
@@ -294,6 +311,16 @@ func ByType(opts ...sql.OrderTermOption) OrderOption {
 // ByProxyID orders the results by the proxy_id field.
 func ByProxyID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldProxyID, opts...).ToFunc()
+}
+
+// BySupplierID orders the results by the supplier_id field.
+func BySupplierID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplierID, opts...).ToFunc()
+}
+
+// BySupplierDisabled orders the results by the supplier_disabled field.
+func BySupplierDisabled(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldSupplierDisabled, opts...).ToFunc()
 }
 
 // ByProxyFallbackOriginID orders the results by the proxy_fallback_origin_id field.
@@ -422,6 +449,13 @@ func ByProxyField(field string, opts ...sql.OrderTermOption) OrderOption {
 	}
 }
 
+// BySupplierField orders the results by supplier field.
+func BySupplierField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newSupplierStep(), sql.OrderByField(field, opts...))
+	}
+}
+
 // ByParentField orders the results by parent field.
 func ByParentField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -482,6 +516,13 @@ func newProxyStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ProxyInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.M2O, false, ProxyTable, ProxyColumn),
+	)
+}
+func newSupplierStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(SupplierInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, SupplierTable, SupplierColumn),
 	)
 }
 func newParentStep() *sqlgraph.Step {

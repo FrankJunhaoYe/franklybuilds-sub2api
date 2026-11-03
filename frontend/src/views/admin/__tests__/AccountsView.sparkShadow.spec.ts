@@ -1,3 +1,6 @@
+vi.mock('@/api/admin/suppliers', () => ({ default: { getAll: async () => [] } }))
+vi.mock('vue-router', async () => ({ ...(await vi.importActual<typeof import('vue-router')>('vue-router')), useRoute: () => ({ query: {} }) }))
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 

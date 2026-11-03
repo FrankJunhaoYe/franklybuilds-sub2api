@@ -1,5 +1,11 @@
+vi.mock('@/api/admin/suppliers', () => ({ default: { getAll: async () => [] } }))
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { reactive } from 'vue'
+
+const route = reactive<{ query: Record<string, unknown> }>({ query: {} })
+vi.mock('vue-router', async () => ({ ...(await vi.importActual<typeof import('vue-router')>('vue-router')), useRoute: () => route }))
 
 import AccountsView from '../AccountsView.vue'
 
@@ -96,6 +102,7 @@ const AccountBulkActionsBarStub = {
 }
 
 const AccountTableFiltersStub = {
+  props: ['filters'],
   emits: ['change'],
   template: '<button data-test="change-filter" @click="$emit(\'change\')">change filter</button>'
 }
@@ -142,6 +149,7 @@ const mountView = () => mount(AccountsView, {
 
 describe('admin AccountsView select all filtered results', () => {
   beforeEach(() => {
+    route.query = {}
     localStorage.clear()
     listAccounts.mockReset()
     listWithEtag.mockReset()
@@ -165,6 +173,34 @@ describe('admin AccountsView select all filtered results', () => {
 
   afterEach(() => {
     vi.restoreAllMocks()
+  })
+
+  it('loads a linked supplier without persisted filters and reloads when the supplier changes', async () => {
+    localStorage.setItem('account-filter-values', JSON.stringify({ platform: 'grok', status: 'inactive' }))
+    route.query = { supplier_id: '7' }
+    listAccounts.mockResolvedValue({ items: makeAccounts(3), total: 3, page: 1, page_size: 20, pages: 1 })
+    const wrapper = mountView()
+    await flushPromises()
+    expect(listAccounts).toHaveBeenCalledWith(1, 20, expect.objectContaining({ supplier_id: '7', platform: '', status: '', group: '', search: '' }), expect.anything())
+    await wrapper.get('[data-test="select-page"]').trigger('click')
+    const filters = wrapper.getComponent(AccountTableFiltersStub).props('filters')
+    Object.assign(filters, { platform: 'openai', status: 'error', type: 'oauth', group: '2', search: 'old query', privacy_mode: 'true' })
+    route.query = { supplier_id: '8' }
+    await flushPromises()
+    expect(listAccounts).toHaveBeenLastCalledWith(1, 20, expect.objectContaining({ supplier_id: '8', platform: '', status: '', type: '', group: '', search: '', privacy_mode: '' }), expect.anything())
+    expect(wrapper.get('[data-test="selected-count"]').text()).toBe('0')
+    expect(JSON.parse(localStorage.getItem('account-filter-values')!)).toEqual({ platform: 'grok', status: 'inactive' })
+    wrapper.unmount()
+  })
+
+  it.each([undefined, '-1', 'invalid', ['7'], '9007199254740992'])('preserves normal filter preferences for an invalid supplier query %s', async (supplierQuery) => {
+    localStorage.setItem('account-filter-values', JSON.stringify({ platform: 'grok', status: 'inactive' }))
+    route.query = { supplier_id: supplierQuery }
+    listAccounts.mockResolvedValue({ items: [], total: 0, page: 1, page_size: 20, pages: 0 })
+    const wrapper = mountView()
+    await flushPromises()
+    expect(listAccounts).toHaveBeenCalledWith(1, 20, expect.objectContaining({ supplier_id: '', platform: 'grok', status: 'inactive' }), expect.anything())
+    wrapper.unmount()
   })
 
   it.each([

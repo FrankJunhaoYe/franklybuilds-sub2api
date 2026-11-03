@@ -398,6 +398,7 @@ type UpdateGroupInput struct {
 }
 
 type CreateAccountInput struct {
+	SupplierID         *int64
 	ProxyMode          string // 受限写入在验权后选择代理。
 	Name               string
 	Notes              *string
@@ -407,13 +408,16 @@ type CreateAccountInput struct {
 	Extra              map[string]any
 	ProxyID            *int64
 	Concurrency        int
+	ConcurrencySet     bool // Distinguishes an explicit zero from omitted supplier defaults.
 	Priority           int
+	PrioritySet        bool
 	RateMultiplier     *float64 // 账号计费倍率（>=0，允许 0）
 	LoadFactor         *int
 	GroupIDs           []int64
 	ExpiresAt          *int64
 	AutoPauseOnExpired *bool
 	ProbeEnabled       *bool
+	RateSyncEnabled    *bool
 	// SkipDefaultGroupBind prevents auto-binding to platform default group when GroupIDs is empty.
 	SkipDefaultGroupBind bool
 	// SkipMixedChannelCheck skips the mixed channel risk check when binding groups.
@@ -431,6 +435,8 @@ type ShadowOptions struct {
 }
 
 type UpdateAccountInput struct {
+	SupplierID            *int64
+	SupplierIDSet         bool
 	ProxyMode             string // 受限写入在验权后选择代理。
 	Name                  string
 	Notes                 *string
@@ -473,6 +479,7 @@ type BulkUpdateAccountsInput struct {
 }
 
 type BulkUpdateAccountFilters struct {
+	SupplierID  string
 	Platform    string
 	Type        string
 	Status      string

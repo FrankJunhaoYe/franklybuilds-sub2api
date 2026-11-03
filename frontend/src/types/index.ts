@@ -1261,6 +1261,10 @@ export interface GrokModelDiagnostics {
 }
 
 export interface Account {
+  supplier_id?: number | null
+  supplier_name?: string
+  supplier_base_url?: string
+  supplier_status?: 'active' | 'inactive'
   id: number
   name: string
   notes?: string | null
@@ -1584,6 +1588,7 @@ export interface OpenAIResponsesState {
 }
 
 export interface CreateAccountRequest {
+  supplier_id?: number | null
   name: string
   notes?: string | null
   platform: AccountPlatform
@@ -1599,10 +1604,12 @@ export interface CreateAccountRequest {
   expires_at?: number | null
   auto_pause_on_expired?: boolean
   upstream_billing_probe_enabled?: boolean
+  upstream_billing_rate_sync_enabled?: boolean
   confirm_mixed_channel_risk?: boolean
 }
 
 export interface UpdateAccountRequest {
+  supplier_id?: number | null
   name?: string
   notes?: string | null
   type?: AccountType

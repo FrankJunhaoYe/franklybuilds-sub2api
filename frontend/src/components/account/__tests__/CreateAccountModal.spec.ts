@@ -74,6 +74,12 @@ vi.mock('vue-i18n', async () => {
 })
 
 import CreateAccountModal from '../CreateAccountModal.vue'
+import SupplierAccountField from '../SupplierAccountField.vue'
+
+const supplier = {
+  id: 7, name: 'Relay', base_url: 'https://relay.example', status: 'active' as const, notes: '', account_count: 0,
+  balance: null, balance_status: 'unknown' as const, has_balance_api_key: false
+}
 
 const BaseDialogStub = defineComponent({
   name: 'BaseDialog',
@@ -218,6 +224,90 @@ describe('CreateAccountModal OpenAI long-context billing', () => {
   })
 
   afterEach(() => vi.useRealTimers())
+
+  it('uses a supplier URL across platform changes and leaves save-time probes to the backend', async () => {
+    const wrapper = mountModal()
+    await wrapper.setProps({ supplier })
+    await selectButtonByText(wrapper, 'OpenAI')
+    await flushPromises()
+    expect(wrapper.find('[data-tour="account-form-type"]').exists()).toBe(false)
+    const url = wrapper.findAll<HTMLInputElement>('input[readonly]').find(input => input.element.value === 'https://relay.example')
+    expect(url).toBeDefined()
+    await wrapper.get('[data-tour="account-form-name"]').setValue('Standard upstream group')
+    await wrapper.get('form#create-account-form input[type="password"]').setValue('test-key')
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+    expect(createAccountMock).toHaveBeenCalledWith(expect.objectContaining({
+      supplier_id: 7, platform: 'openai', type: 'apikey',
+      concurrency: 100, priority: 1,
+      credentials: expect.objectContaining({ base_url: 'https://relay.example', api_key: 'test-key', pool_mode: true }),
+      upstream_billing_probe_enabled: true, upstream_billing_rate_sync_enabled: true
+    }))
+    expect(createAccountMock.mock.calls[0]?.[0]).not.toHaveProperty('rate_multiplier')
+    expect(probeUpstreamBillingMock).not.toHaveBeenCalled()
+    wrapper.unmount()
+  })
+
+  it('applies supplier defaults from account management and preserves later edits across supplier changes', async () => {
+    const wrapper = mountModal()
+    await wrapper.setProps({ suppliers: [supplier, { ...supplier, id: 9, name: 'Relay B' }] })
+    await wrapper.getComponent(SupplierAccountField).get('select').setValue('7')
+    await selectButtonByText(wrapper, 'OpenAI')
+    expect(wrapper.get<HTMLInputElement>('[data-testid="account-concurrency"]').element.value).toBe('100')
+    expect(wrapper.get('[data-testid="account-rate-multiplier"]').attributes('disabled')).toBeDefined()
+    await wrapper.get('[data-testid="account-concurrency"]').setValue('45')
+    await wrapper.get('[data-tour="account-form-priority"]').setValue('4')
+    await wrapper.get('[data-testid="pool-mode-toggle"]').trigger('click')
+    await wrapper.get('[data-testid="upstream-billing-rate-sync"]').trigger('click')
+    await wrapper.get('[data-testid="account-rate-multiplier"]').setValue('1.3')
+    await wrapper.getComponent(SupplierAccountField).get('select').setValue('9')
+    await selectButtonByText(wrapper, 'Gemini')
+    await selectButtonByText(wrapper, 'OpenAI')
+    await wrapper.get('[data-tour="account-form-name"]').setValue('Custom supplier key')
+    await wrapper.get('form#create-account-form input[type="password"]').setValue('test-key')
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+    expect(createAccountMock).toHaveBeenCalledWith(expect.objectContaining({
+      supplier_id: 9, concurrency: 45, priority: 4, rate_multiplier: 1.3,
+      credentials: expect.objectContaining({ pool_mode: false }),
+      upstream_billing_probe_enabled: true, upstream_billing_rate_sync_enabled: false
+    }))
+    wrapper.unmount()
+  })
+
+  it('preserves values changed before selecting a supplier, including disabled probes', async () => {
+    const wrapper = mountModal()
+    await wrapper.setProps({ suppliers: [supplier] })
+    await selectButtonByText(wrapper, 'OpenAI')
+    await selectButtonByText(wrapper, 'API Key')
+    await wrapper.get('[data-testid="account-concurrency"]').setValue('25')
+    await wrapper.get('[data-testid="upstream-billing-auto-probe"]').trigger('click')
+    await wrapper.getComponent(SupplierAccountField).get('select').setValue('7')
+    await wrapper.get('[data-tour="account-form-name"]').setValue('Custom supplier key')
+    await wrapper.get('form#create-account-form input[type="password"]').setValue('test-key')
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+    expect(createAccountMock).toHaveBeenCalledWith(expect.objectContaining({
+      supplier_id: 7, concurrency: 25, upstream_billing_probe_enabled: false, upstream_billing_rate_sync_enabled: false
+    }))
+    wrapper.unmount()
+  })
+
+  it('restores self-owned defaults when a supplier selection is cleared and reapplies them on reopening', async () => {
+    const wrapper = mountModal()
+    await wrapper.setProps({ suppliers: [supplier] })
+    await wrapper.getComponent(SupplierAccountField).get('select').setValue('7')
+    await selectButtonByText(wrapper, 'OpenAI')
+    await wrapper.getComponent(SupplierAccountField).get('select').setValue('')
+    expect(wrapper.get<HTMLInputElement>('[data-testid="account-concurrency"]').element.value).toBe('10')
+    expect(wrapper.get('[data-testid="account-rate-multiplier"]').attributes('disabled')).toBeUndefined()
+    await wrapper.setProps({ show: false })
+    await wrapper.setProps({ supplier, show: true })
+    await flushPromises()
+    expect(wrapper.get<HTMLInputElement>('[data-testid="account-concurrency"]').element.value).toBe('100')
+    expect(wrapper.get('[data-testid="account-rate-multiplier"]').attributes('disabled')).toBeDefined()
+    wrapper.unmount()
+  })
 
   it('sets month and year expiry presets without submitting the account form', async () => {
     vi.useFakeTimers({ toFake: ['Date'] })
