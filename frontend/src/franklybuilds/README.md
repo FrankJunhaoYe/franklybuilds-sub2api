@@ -2,6 +2,8 @@
 
 Theme customizations live here to reduce conflicts when merging Sub2API updates.
 
+Administrator supplier management is documented in [the supplier design](../../../openspec/changes/add-supplier-management/design.md). Its UI entry is `/admin/suppliers`; it reuses account forms, local groups, and the shared theme. The backend adds `suppliers`, account supplier ownership and scheduling gates in migration `249_supplier_management.sql`, with administrator CRUD and wallet refresh endpoints. Preserve those account, scheduler, credential-update, and generated schema integration points when merging upstream. Validation and its limits are recorded in [the verification notes](../../../openspec/changes/add-supplier-management/verification.md).
+
 - `theme.js`: every palette Tailwind consumes. Besides primary, warm gray and dark, this now remaps the stock hue families — `blue`/`sky`/`cyan`/`indigo` to one warm teal, `purple`/`violet`/`fuchsia`/`pink` to plum, and the semantic families to warm success/warning/error/orange ramps. Upstream markup uses those utility names thousands of times, so remapping here warms the whole application without editing that markup, and upstream merges stay clean. Changing any ramp affects existing utility classes application-wide.
 - `theme.css`: font faces, shared component surfaces, navigation, authentication and page-specific adaptations. Shared modal/menu rules intentionally apply outside layout wrappers because Vue teleports overlays to the document body.
 

@@ -91,6 +91,9 @@ func (Account) Fields() []ent.Field {
 		field.Int64("proxy_id").
 			Optional().
 			Nillable(),
+		field.Int64("supplier_id").Optional().Nillable(),
+		// Supplier gate is independent of the account's own enabled/schedulable state.
+		field.Bool("supplier_disabled").Default(false),
 		field.Int64("proxy_fallback_origin_id").
 			Optional().Nillable().
 			Comment("Original proxy id replaced by expiry-fallback; for manual revert. NULL = not in fallback."),
@@ -217,6 +220,7 @@ func (Account) Edges() []ent.Edge {
 		edge.To("proxy", Proxy.Type).
 			Field("proxy_id").
 			Unique(),
+		edge.To("supplier", Supplier.Type).Field("supplier_id").Unique(),
 		// children/parent: linked spark shadow relationship.
 		// parent_account_id is nullable, and the active one-shadow-per-parent rule
 		// is enforced by the partial unique index in migration 154a.
@@ -234,10 +238,11 @@ func (Account) Edges() []ent.Edge {
 // 每个索引对应一个常用的查询条件。
 func (Account) Indexes() []ent.Index {
 	return []ent.Index{
-		index.Fields("platform"),            // 按平台筛选
-		index.Fields("type"),                // 按认证类型筛选
-		index.Fields("status"),              // 按状态筛选
-		index.Fields("proxy_id"),            // 按代理筛选
+		index.Fields("platform"), // 按平台筛选
+		index.Fields("type"),     // 按认证类型筛选
+		index.Fields("status"),   // 按状态筛选
+		index.Fields("proxy_id"), // 按代理筛选
+		index.Fields("supplier_id"),
 		index.Fields("priority"),            // 按优先级排序
 		index.Fields("last_used_at"),        // 按最后使用时间排序
 		index.Fields("schedulable"),         // 筛选可调度账户

@@ -14,6 +14,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/account"
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/supplier"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -121,6 +122,34 @@ func (_c *AccountCreate) SetProxyID(v int64) *AccountCreate {
 func (_c *AccountCreate) SetNillableProxyID(v *int64) *AccountCreate {
 	if v != nil {
 		_c.SetProxyID(*v)
+	}
+	return _c
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (_c *AccountCreate) SetSupplierID(v int64) *AccountCreate {
+	_c.mutation.SetSupplierID(v)
+	return _c
+}
+
+// SetNillableSupplierID sets the "supplier_id" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplierID(v *int64) *AccountCreate {
+	if v != nil {
+		_c.SetSupplierID(*v)
+	}
+	return _c
+}
+
+// SetSupplierDisabled sets the "supplier_disabled" field.
+func (_c *AccountCreate) SetSupplierDisabled(v bool) *AccountCreate {
+	_c.mutation.SetSupplierDisabled(v)
+	return _c
+}
+
+// SetNillableSupplierDisabled sets the "supplier_disabled" field if the given value is not nil.
+func (_c *AccountCreate) SetNillableSupplierDisabled(v *bool) *AccountCreate {
+	if v != nil {
+		_c.SetSupplierDisabled(*v)
 	}
 	return _c
 }
@@ -439,6 +468,11 @@ func (_c *AccountCreate) SetProxy(v *Proxy) *AccountCreate {
 	return _c.SetProxyID(v.ID)
 }
 
+// SetSupplier sets the "supplier" edge to the Supplier entity.
+func (_c *AccountCreate) SetSupplier(v *Supplier) *AccountCreate {
+	return _c.SetSupplierID(v.ID)
+}
+
 // SetParentID sets the "parent" edge to the Account entity by ID.
 func (_c *AccountCreate) SetParentID(id int64) *AccountCreate {
 	_c.mutation.SetParentID(id)
@@ -553,6 +587,10 @@ func (_c *AccountCreate) defaults() error {
 		v := account.DefaultExtra()
 		_c.mutation.SetExtra(v)
 	}
+	if _, ok := _c.mutation.SupplierDisabled(); !ok {
+		v := account.DefaultSupplierDisabled
+		_c.mutation.SetSupplierDisabled(v)
+	}
 	if _, ok := _c.mutation.Concurrency(); !ok {
 		v := account.DefaultConcurrency
 		_c.mutation.SetConcurrency(v)
@@ -621,6 +659,9 @@ func (_c *AccountCreate) check() error {
 	}
 	if _, ok := _c.mutation.Extra(); !ok {
 		return &ValidationError{Name: "extra", err: errors.New(`ent: missing required field "Account.extra"`)}
+	}
+	if _, ok := _c.mutation.SupplierDisabled(); !ok {
+		return &ValidationError{Name: "supplier_disabled", err: errors.New(`ent: missing required field "Account.supplier_disabled"`)}
 	}
 	if _, ok := _c.mutation.Concurrency(); !ok {
 		return &ValidationError{Name: "concurrency", err: errors.New(`ent: missing required field "Account.concurrency"`)}
@@ -720,6 +761,10 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.Extra(); ok {
 		_spec.SetField(account.FieldExtra, field.TypeJSON, value)
 		_node.Extra = value
+	}
+	if value, ok := _c.mutation.SupplierDisabled(); ok {
+		_spec.SetField(account.FieldSupplierDisabled, field.TypeBool, value)
+		_node.SupplierDisabled = value
 	}
 	if value, ok := _c.mutation.ProxyFallbackOriginID(); ok {
 		_spec.SetField(account.FieldProxyFallbackOriginID, field.TypeInt64, value)
@@ -836,6 +881,23 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
 		_node.ProxyID = &nodes[0]
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.SupplierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.SupplierTable,
+			Columns: []string{account.SupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.SupplierID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	if nodes := _c.mutation.ParentIDs(); len(nodes) > 0 {
@@ -1062,6 +1124,36 @@ func (u *AccountUpsert) UpdateProxyID() *AccountUpsert {
 // ClearProxyID clears the value of the "proxy_id" field.
 func (u *AccountUpsert) ClearProxyID() *AccountUpsert {
 	u.SetNull(account.FieldProxyID)
+	return u
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *AccountUpsert) SetSupplierID(v int64) *AccountUpsert {
+	u.Set(account.FieldSupplierID, v)
+	return u
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplierID() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplierID)
+	return u
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *AccountUpsert) ClearSupplierID() *AccountUpsert {
+	u.SetNull(account.FieldSupplierID)
+	return u
+}
+
+// SetSupplierDisabled sets the "supplier_disabled" field.
+func (u *AccountUpsert) SetSupplierDisabled(v bool) *AccountUpsert {
+	u.Set(account.FieldSupplierDisabled, v)
+	return u
+}
+
+// UpdateSupplierDisabled sets the "supplier_disabled" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateSupplierDisabled() *AccountUpsert {
+	u.SetExcluded(account.FieldSupplierDisabled)
 	return u
 }
 
@@ -1620,6 +1712,41 @@ func (u *AccountUpsertOne) UpdateProxyID() *AccountUpsertOne {
 func (u *AccountUpsertOne) ClearProxyID() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProxyID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *AccountUpsertOne) SetSupplierID(v int64) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplierID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *AccountUpsertOne) ClearSupplierID() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplierID()
+	})
+}
+
+// SetSupplierDisabled sets the "supplier_disabled" field.
+func (u *AccountUpsertOne) SetSupplierDisabled(v bool) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplierDisabled(v)
+	})
+}
+
+// UpdateSupplierDisabled sets the "supplier_disabled" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateSupplierDisabled() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplierDisabled()
 	})
 }
 
@@ -2405,6 +2532,41 @@ func (u *AccountUpsertBulk) UpdateProxyID() *AccountUpsertBulk {
 func (u *AccountUpsertBulk) ClearProxyID() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.ClearProxyID()
+	})
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (u *AccountUpsertBulk) SetSupplierID(v int64) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplierID(v)
+	})
+}
+
+// UpdateSupplierID sets the "supplier_id" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplierID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplierID()
+	})
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (u *AccountUpsertBulk) ClearSupplierID() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearSupplierID()
+	})
+}
+
+// SetSupplierDisabled sets the "supplier_disabled" field.
+func (u *AccountUpsertBulk) SetSupplierDisabled(v bool) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetSupplierDisabled(v)
+	})
+}
+
+// UpdateSupplierDisabled sets the "supplier_disabled" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateSupplierDisabled() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateSupplierDisabled()
 	})
 }
 

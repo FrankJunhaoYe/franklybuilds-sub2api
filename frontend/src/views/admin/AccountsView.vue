@@ -7,6 +7,7 @@
             v-model:searchQuery="params.search"
             :filters="params"
             :groups="groups"
+            :suppliers="suppliers"
             @update:filters="(newFilters) => Object.assign(params, newFilters)"
             @change="debouncedReload"
             @update:searchQuery="debouncedReload"
@@ -223,6 +224,7 @@
             <span class="font-mono text-xs text-gray-500 dark:text-gray-400">#{{ value }}</span>
           </template>
           <template #cell-name="{ row, value }">
+            <RouterLink v-if="row.supplier_id" :to="{ path: '/admin/suppliers', query: { supplier: row.supplier_id } }" class="mb-1 block text-xs text-primary-600 hover:underline">{{ row.supplier_name || suppliers.find(item => item.id === row.supplier_id)?.name || t('admin.suppliers.supplier') }}</RouterLink>
             <div class="flex flex-col">
               <HelpTooltip
                 v-if="accountHomepageUrl(row)"
@@ -454,8 +456,8 @@
       </template>
       <template #pagination><Pagination v-if="pagination.total > 0" :page="pagination.page" :total="pagination.total" :page-size="pagination.page_size" @update:page="handlePageChange" @update:pageSize="handlePageSizeChange" /></template>
     </TablePageLayout>
-    <CreateAccountModal :show="showCreate" :proxies="proxies" :groups="groups" @close="showCreate = false" @created="reload" />
-    <EditAccountModal :show="showEdit" :account="edAcc" :proxies="proxies" :groups="groups" @close="showEdit = false" @updated="handleAccountUpdated" />
+    <CreateAccountModal :show="showCreate" :proxies="proxies" :groups="groups" :suppliers="suppliers" @close="showCreate = false" @created="reload" />
+    <EditAccountModal :show="showEdit" :account="edAcc" :proxies="proxies" :groups="groups" :suppliers="suppliers" @close="showEdit = false" @updated="handleAccountUpdated" />
     <ReAuthAccountModal :show="showReAuth" :account="reAuthAcc" @close="closeReAuthModal" @reauthorized="handleAccountUpdated" />
     <AccountTestModal :show="showTest" :account="testingAcc" @close="closeTestModal" />
     <AccountStatsModal :show="showStats" :account="statsAcc" @close="closeStatsModal" />
@@ -490,6 +492,8 @@
 </template>
 
 <script setup lang="ts">
+import { RouterLink, useRoute } from 'vue-router'
+import suppliersAPI, { type Supplier } from '@/api/admin/suppliers'
 import { ref, reactive, computed, onMounted, onUnmounted, toRaw, watch } from 'vue'
 import { useIntervalFn } from '@vueuse/core'
 import { useI18n } from 'vue-i18n'
@@ -541,9 +545,11 @@ import { formatMultiplier } from '@/utils/formatters'
 import type { Account, AccountListItem, AccountPlatform, AccountSchedulerGroupScore, AccountType, AccountUsageInfo, Proxy as AccountProxy, AdminGroup, WindowStats, ClaudeModel, UpstreamBillingProbeSnapshot } from '@/types'
 
 const { t } = useI18n()
+const route = useRoute()
 const appStore = useAppStore()
 const authStore = useAuthStore()
 
+const suppliers = ref<Supplier[]>([])
 const proxies = ref<AccountProxy[]>([])
 const groups = ref<AdminGroup[]>([])
 const groupsByID = computed(() => new Map(groups.value.map(group => [group.id, group])))
@@ -656,6 +662,12 @@ const HIDDEN_COLUMNS_CURRENT_VERSION = 'scheduler-score-hidden-by-default'
 
 // Account filter settings
 const ACCOUNT_FILTER_STORAGE_KEY = 'account-filter-values'
+const supplierFilterFromQuery = (value: unknown): string => {
+  if (typeof value !== 'string' || !/^\d+$/.test(value)) return ''
+  const id = Number(value)
+  return Number.isSafeInteger(id) ? String(id) : ''
+}
+const supplierFilterFromRoute = computed(() => supplierFilterFromQuery(route.query.supplier_id))
 type AccountFilterValues = {
   platform: string
   status: string
@@ -1110,8 +1122,9 @@ const {
 } = useTableLoader<AccountListItem, any>({
   fetchFn: adminAPI.accounts.list,
   initialParams: {
-    ...loadInitialAccountFilterValues(),
+    ...(supplierFilterFromRoute.value ? { platform: '', status: '' } : loadInitialAccountFilterValues()),
     type: '',
+    supplier_id: supplierFilterFromRoute.value,
     privacy_mode: '',
     group: '',
     search: '',
@@ -1203,6 +1216,15 @@ const reload = async () => {
   await refreshTodayStatsBatch()
 }
 
+watch(supplierFilterFromRoute, (supplierID) => {
+  if (supplierID) {
+    Object.assign(params, { platform: '', status: '', type: '', privacy_mode: '', group: '', search: '' })
+  }
+  params.supplier_id = supplierID
+  clearSelection()
+  void reload()
+})
+
 const buildUpstreamBillingRateFilters = () => {
   const rawParams = toRaw(params) as Record<string, unknown>
   return {
@@ -1210,6 +1232,7 @@ const buildUpstreamBillingRateFilters = () => {
     type: typeof rawParams.type === 'string' ? rawParams.type : '',
     status: typeof rawParams.status === 'string' ? rawParams.status : '',
     group: typeof rawParams.group === 'string' ? rawParams.group : '',
+    supplier_id: rawParams.supplier_id == null ? '' : String(rawParams.supplier_id),
     search: typeof rawParams.search === 'string' ? rawParams.search : '',
     privacy_mode: typeof rawParams.privacy_mode === 'string' ? rawParams.privacy_mode : '',
     sort_by: sortState.sort_by,
@@ -2094,6 +2117,7 @@ const buildBulkEditFilterSnapshot = () => {
     type: typeof rawParams.type === 'string' ? rawParams.type : '',
     status: typeof rawParams.status === 'string' ? rawParams.status : '',
     group: typeof rawParams.group === 'string' ? rawParams.group : '',
+    supplier_id: rawParams.supplier_id == null ? '' : String(rawParams.supplier_id),
     search: typeof rawParams.search === 'string' ? rawParams.search : '',
     privacy_mode: typeof rawParams.privacy_mode === 'string' ? rawParams.privacy_mode : '',
     sort_by: typeof rawParams.sort_by === 'string' ? rawParams.sort_by : '',
@@ -2171,6 +2195,7 @@ const buildAccountQueryFilters = () => ({
   type: params.type || '',
   status: params.status || '',
   group: params.group || '',
+  supplier_id: params.supplier_id ?? '',
   privacy_mode: params.privacy_mode || '',
   search: params.search || '',
   sort_by: sortState.sort_by,
@@ -2178,6 +2203,7 @@ const buildAccountQueryFilters = () => ({
 })
 const accountMatchesCurrentFilters = (account: Account) => {
   const filters = buildAccountQueryFilters()
+  if (filters.supplier_id !== '' && (account.supplier_id ?? 0) !== Number(filters.supplier_id)) return false
   if (filters.platform && account.platform !== filters.platform) return false
   if (filters.type && account.type !== filters.type) return false
   if (filters.status) {
@@ -2576,6 +2602,7 @@ onMounted(async () => {
 
   load()
   loadUpstreamBillingProbeGlobalState()
+  suppliersAPI.getAll().then(items => { suppliers.value = items }).catch(() => { appStore.showError(t('admin.suppliers.loadFailed')) })
   const [proxiesResult, groupsResult] = await Promise.allSettled([
     adminAPI.proxies.getAll(),
     adminAPI.groups.getAll()

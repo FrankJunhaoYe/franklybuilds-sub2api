@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/config"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/adminaccess"
 	infraerrors "github.com/Wei-Shaw/sub2api/internal/pkg/errors"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/pagination"
@@ -299,6 +300,7 @@ func (s *adminServiceImpl) DuplicateAccount(ctx context.Context, id int64, actor
 		proxyID = source.ProxyFallbackOriginID
 	}
 	input := &CreateAccountInput{
+		SupplierID:            cloneAccountValuePointer(source.SupplierID),
 		Name:                  duplicateAccountName(source.Name),
 		Notes:                 cloneAccountValuePointer(source.Notes),
 		Platform:              source.Platform,
@@ -414,7 +416,7 @@ func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]an
 	if input.Platform == PlatformTypeSafe && input.Type != AccountTypeAPIKey {
 		return nil, errors.New("typesafe accounts only support apikey credentials")
 	}
-	// Probe/session state is system-managed. New accounts always start with automatic refresh disabled.
+	// Probe/session observations are system-managed; only explicit creation settings survive.
 	delete(accountExtra, UpstreamBillingProbeEnabledExtraKey)
 	delete(accountExtra, UpstreamBillingRateSyncEnabledExtraKey)
 	delete(accountExtra, UpstreamBillingProbeExtraKey)
@@ -425,6 +427,7 @@ func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]an
 	delete(accountExtra, OpenCodeGoUsageSnapshotExtraKey)
 	accountExtra = prepareCodexFingerprintExtraForCreate(input.Platform, input.Type, accountExtra)
 	account := &Account{
+		SupplierID:  input.SupplierID,
 		Name:        input.Name,
 		Notes:       normalizeAccountNotes(input.Notes),
 		Platform:    input.Platform,
@@ -437,7 +440,15 @@ func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]an
 		Status:      StatusActive,
 		Schedulable: true,
 	}
-	if input.ProbeEnabled != nil && *input.ProbeEnabled {
+	probeEnabled := input.ProbeEnabled
+	if input.RateSyncEnabled != nil && *input.RateSyncEnabled {
+		if probeEnabled != nil && !*probeEnabled {
+			return nil, infraerrors.BadRequest("UPSTREAM_BILLING_RATE_SYNC_REQUIRES_PROBE", "upstream billing rate sync requires upstream billing probe")
+		}
+		enabled := true
+		probeEnabled = &enabled
+	}
+	if probeEnabled != nil && *probeEnabled {
 		if !isUpstreamBillingProbeAccount(account) {
 			return nil, ErrUpstreamBillingProbeAccountInvalid
 		}
@@ -445,6 +456,12 @@ func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]an
 			account.Extra = make(map[string]any)
 		}
 		account.Extra[UpstreamBillingProbeEnabledExtraKey] = true
+	}
+	if input.RateSyncEnabled != nil {
+		if account.Extra == nil {
+			account.Extra = make(map[string]any)
+		}
+		account.Extra[UpstreamBillingRateSyncEnabledExtraKey] = *input.RateSyncEnabled
 	}
 	// 预计算固定时间重置的下次重置时间
 	if account.Extra != nil {
@@ -478,7 +495,39 @@ func buildAccountForCreate(input *CreateAccountInput, accountExtra map[string]an
 	return account, nil
 }
 
+func applySupplierAccountCreateDefaults(input *CreateAccountInput) {
+	if !input.ConcurrencySet && input.Concurrency == 0 {
+		input.Concurrency = 100
+	}
+	if !input.PrioritySet && input.Priority == 0 {
+		input.Priority = 1
+	}
+	if input.RateSyncEnabled == nil {
+		enabled := input.ProbeEnabled == nil || *input.ProbeEnabled
+		input.RateSyncEnabled = &enabled
+	}
+	input.Credentials = maps.Clone(input.Credentials)
+	if input.Credentials == nil {
+		input.Credentials = make(map[string]any)
+	}
+	if _, supplied := input.Credentials["pool_mode"]; !supplied {
+		input.Credentials["pool_mode"] = true
+	}
+}
+
 func (s *adminServiceImpl) CreateAccount(ctx context.Context, input *CreateAccountInput) (*Account, error) {
+	if input.SupplierID != nil && *input.SupplierID == 0 {
+		input.SupplierID = nil
+	}
+	if input.SupplierID != nil {
+		if adminaccess.FromContext(ctx) != nil {
+			return nil, infraerrors.Forbidden("SUPPLIER_ADMIN_REQUIRED", "supplier assignment requires a full administrator")
+		}
+		if *input.SupplierID <= 0 || !IsUpstreamBillingProbeIdentity(input.Platform, input.Type) {
+			return nil, infraerrors.BadRequest("INVALID_SUPPLIER_ACCOUNT", "supplier accounts must use API key credentials")
+		}
+		applySupplierAccountCreateDefaults(input)
+	}
 	accountExtra, err := normalizeOpenAILongContextBillingExtra(input.Platform, input.Extra)
 	if err != nil {
 		return nil, err
@@ -580,6 +629,27 @@ func (s *adminServiceImpl) UpdateAccount(ctx context.Context, id int64, input *U
 	account, err := s.accountRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
+	}
+	if input.SupplierIDSet {
+		if input.SupplierID != nil && *input.SupplierID == 0 {
+			input.SupplierID = nil
+		}
+		if adminaccess.FromContext(ctx) != nil {
+			return nil, infraerrors.Forbidden("SUPPLIER_ADMIN_REQUIRED", "supplier assignment requires a full administrator")
+		}
+		if input.SupplierID != nil && *input.SupplierID <= 0 {
+			return nil, infraerrors.BadRequest("INVALID_SUPPLIER_ACCOUNT", "invalid supplier ID")
+		}
+		account.SupplierID = input.SupplierID
+	}
+	if account.SupplierID != nil {
+		accountType := account.Type
+		if input.Type != "" {
+			accountType = input.Type
+		}
+		if !IsUpstreamBillingProbeIdentity(account.Platform, accountType) {
+			return nil, infraerrors.BadRequest("INVALID_SUPPLIER_ACCOUNT", "supplier accounts must use API key credentials")
+		}
 	}
 	if account.Platform == PlatformTypeSafe && input.Type != "" && input.Type != AccountTypeAPIKey {
 		return nil, errors.New("typesafe accounts only support apikey credentials")
@@ -1243,6 +1313,13 @@ func upstreamBillingProbeIdentity(account *Account) map[string]any {
 func (s *adminServiceImpl) resolveBulkUpdateTargetIDs(ctx context.Context, filters *BulkUpdateAccountFilters) ([]int64, error) {
 	if filters == nil {
 		return nil, nil
+	}
+	if filters.SupplierID != "" {
+		id, err := strconv.ParseInt(filters.SupplierID, 10, 64)
+		if err != nil || id < 0 {
+			return nil, infraerrors.BadRequest("INVALID_SUPPLIER_FILTER", "invalid supplier filter")
+		}
+		ctx = WithSupplierAccountFilter(ctx, id)
 	}
 
 	groupID := int64(0)

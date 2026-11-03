@@ -47,8 +47,13 @@ func NewOAuthHandler(oauthService *service.OAuthService) *OAuthHandler {
 	}
 }
 
+type supplierAccountRefresher interface {
+	RefreshAfterAccountSave(context.Context, *service.Account)
+}
+
 // AccountHandler handles admin account management
 type AccountHandler struct {
+	suppliers               supplierAccountRefresher
 	claudeResetCredits      claudeResetReader
 	adminService            service.AdminService
 	oauthService            *service.OAuthService
@@ -69,6 +74,15 @@ type AccountHandler struct {
 	ollamaCloudUsage        *service.OllamaCloudUsageService
 	cfg                     *config.Config
 	opencodeGoUsage         *service.OpenCodeGoUsageService
+}
+
+// SetSupplierService attaches the optional supplier refresh service.
+func (h *AccountHandler) SetSupplierService(suppliers *service.SupplierService) {
+	if suppliers == nil {
+		h.suppliers = nil
+		return
+	}
+	h.suppliers = suppliers
 }
 
 // SetUpstreamBillingProbeService attaches the optional remote billing probe service.
@@ -121,6 +135,7 @@ func NewAccountHandler(
 
 // CreateAccountRequest represents create account request
 type CreateAccountRequest struct {
+	SupplierID              *int64         `json:"supplier_id"`
 	Name                    string         `json:"name" binding:"required"`
 	Notes                   *string        `json:"notes"`
 	Platform                string         `json:"platform" binding:"required"`
@@ -128,37 +143,39 @@ type CreateAccountRequest struct {
 	Credentials             map[string]any `json:"credentials" binding:"required"`
 	Extra                   map[string]any `json:"extra"`
 	ProxyID                 *int64         `json:"proxy_id"`
-	Concurrency             int            `json:"concurrency"`
-	Priority                int            `json:"priority"`
+	Concurrency             *int           `json:"concurrency"`
+	Priority                *int           `json:"priority"`
 	RateMultiplier          *float64       `json:"rate_multiplier"`
 	LoadFactor              *int           `json:"load_factor"`
 	GroupIDs                []int64        `json:"group_ids"`
 	ExpiresAt               *int64         `json:"expires_at"`
 	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
 	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
+	RateSyncEnabled         *bool          `json:"upstream_billing_rate_sync_enabled"`
 	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
 // UpdateAccountRequest represents update account request
 // 使用指针类型来区分"未提供"和"设置为0"
 type UpdateAccountRequest struct {
-	Name                    string         `json:"name"`
-	Notes                   *string        `json:"notes"`
-	Type                    string         `json:"type" binding:"omitempty,oneof=oauth setup-token apikey upstream bedrock service_account"`
-	Credentials             map[string]any `json:"credentials"`
-	Extra                   map[string]any `json:"extra"`
-	ProxyID                 *int64         `json:"proxy_id"`
-	Concurrency             *int           `json:"concurrency"`
-	Priority                *int           `json:"priority"`
-	RateMultiplier          *float64       `json:"rate_multiplier"`
-	LoadFactor              *int           `json:"load_factor"`
-	Status                  string         `json:"status" binding:"omitempty,oneof=active inactive error"`
-	GroupIDs                *[]int64       `json:"group_ids"`
-	ExpiresAt               *int64         `json:"expires_at"`
-	AutoPauseOnExpired      *bool          `json:"auto_pause_on_expired"`
-	ProbeEnabled            *bool          `json:"upstream_billing_probe_enabled"`
-	RateSyncEnabled         *bool          `json:"upstream_billing_rate_sync_enabled"`
-	ConfirmMixedChannelRisk *bool          `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
+	SupplierID              dto.NullableInt64Field `json:"supplier_id"`
+	Name                    string                 `json:"name"`
+	Notes                   *string                `json:"notes"`
+	Type                    string                 `json:"type" binding:"omitempty,oneof=oauth setup-token apikey upstream bedrock service_account"`
+	Credentials             map[string]any         `json:"credentials"`
+	Extra                   map[string]any         `json:"extra"`
+	ProxyID                 *int64                 `json:"proxy_id"`
+	Concurrency             *int                   `json:"concurrency"`
+	Priority                *int                   `json:"priority"`
+	RateMultiplier          *float64               `json:"rate_multiplier"`
+	LoadFactor              *int                   `json:"load_factor"`
+	Status                  string                 `json:"status" binding:"omitempty,oneof=active inactive error"`
+	GroupIDs                *[]int64               `json:"group_ids"`
+	ExpiresAt               *int64                 `json:"expires_at"`
+	AutoPauseOnExpired      *bool                  `json:"auto_pause_on_expired"`
+	ProbeEnabled            *bool                  `json:"upstream_billing_probe_enabled"`
+	RateSyncEnabled         *bool                  `json:"upstream_billing_rate_sync_enabled"`
+	ConfirmMixedChannelRisk *bool                  `json:"confirm_mixed_channel_risk"` // 用户确认混合渠道风险
 }
 
 // BulkUpdateAccountsRequest represents the payload for bulk editing accounts
@@ -181,6 +198,7 @@ type BulkUpdateAccountsRequest struct {
 }
 
 type BulkUpdateAccountFilters struct {
+	SupplierID  string `json:"supplier_id"`
 	Platform    string `json:"platform"`
 	Type        string `json:"type"`
 	Status      string `json:"status"`
@@ -1044,9 +1062,17 @@ func (h *AccountHandler) Create(c *gin.Context) {
 	// 捕获闭包内创建的账号引用，用于创建成功后触发异步探测。
 	// 幂等重放时闭包不会执行 → createdAccount 为 nil → 不重复调度。
 	var createdAccount *service.Account
+	concurrency, priority := 0, 0
+	if req.Concurrency != nil {
+		concurrency = *req.Concurrency
+	}
+	if req.Priority != nil {
+		priority = *req.Priority
+	}
 
 	result, err := executeAdminIdempotent(c, "admin.accounts.create", req, service.DefaultWriteIdempotencyTTL(), func(ctx context.Context) (any, error) {
 		account, execErr := h.adminService.CreateAccount(ctx, &service.CreateAccountInput{
+			SupplierID:            req.SupplierID,
 			Name:                  req.Name,
 			Notes:                 req.Notes,
 			Platform:              req.Platform,
@@ -1054,14 +1080,17 @@ func (h *AccountHandler) Create(c *gin.Context) {
 			Credentials:           req.Credentials,
 			Extra:                 req.Extra,
 			ProxyID:               req.ProxyID,
-			Concurrency:           req.Concurrency,
-			Priority:              req.Priority,
+			Concurrency:           concurrency,
+			ConcurrencySet:        req.Concurrency != nil,
+			Priority:              priority,
+			PrioritySet:           req.Priority != nil,
 			RateMultiplier:        req.RateMultiplier,
 			LoadFactor:            req.LoadFactor,
 			GroupIDs:              req.GroupIDs,
 			ExpiresAt:             req.ExpiresAt,
 			AutoPauseOnExpired:    req.AutoPauseOnExpired,
 			ProbeEnabled:          req.ProbeEnabled,
+			RateSyncEnabled:       req.RateSyncEnabled,
 			SkipMixedChannelCheck: skipCheck,
 		})
 		if execErr != nil {
@@ -1100,6 +1129,12 @@ func (h *AccountHandler) Create(c *gin.Context) {
 	// 探测失败不影响账号创建响应。
 	h.scheduleOpenAIResponsesProbe(createdAccount)
 	h.scheduleGrokImportProbe(createdAccount)
+	if h.suppliers != nil && createdAccount != nil && createdAccount.SupplierID != nil {
+		h.suppliers.RefreshAfterAccountSave(c.Request.Context(), createdAccount)
+		if latest, err := h.adminService.GetAccount(c.Request.Context(), createdAccount.ID); err == nil {
+			result.Data = h.buildAccountResponseWithRuntime(c.Request.Context(), latest)
+		}
+	}
 	response.Success(c, result.Data)
 }
 
@@ -1179,6 +1214,8 @@ func (h *AccountHandler) Update(c *gin.Context) {
 	skipCheck := req.ConfirmMixedChannelRisk != nil && *req.ConfirmMixedChannelRisk
 
 	account, err := h.adminService.UpdateAccount(c.Request.Context(), accountID, &service.UpdateAccountInput{
+		SupplierID:            req.SupplierID.Value,
+		SupplierIDSet:         req.SupplierID.Set,
 		Name:                  req.Name,
 		Notes:                 req.Notes,
 		Type:                  req.Type,
@@ -1219,6 +1256,12 @@ func (h *AccountHandler) Update(c *gin.Context) {
 		h.scheduleOpenAIResponsesProbe(account)
 	}
 
+	if h.suppliers != nil && account.SupplierID != nil {
+		h.suppliers.RefreshAfterAccountSave(c.Request.Context(), account)
+		if latest, err := h.adminService.GetAccount(c.Request.Context(), account.ID); err == nil {
+			account = latest
+		}
+	}
 	response.Success(c, h.buildAccountResponseWithRuntime(c.Request.Context(), account))
 }
 
@@ -2136,6 +2179,13 @@ func (h *AccountHandler) BatchCreate(c *gin.Context) {
 			}
 
 			skipCheck := item.ConfirmMixedChannelRisk != nil && *item.ConfirmMixedChannelRisk
+			concurrency, priority := 0, 0
+			if item.Concurrency != nil {
+				concurrency = *item.Concurrency
+			}
+			if item.Priority != nil {
+				priority = *item.Priority
+			}
 
 			account, err := h.adminService.CreateAccount(ctx, &service.CreateAccountInput{
 				Name:                  item.Name,
@@ -2145,8 +2195,10 @@ func (h *AccountHandler) BatchCreate(c *gin.Context) {
 				Credentials:           item.Credentials,
 				Extra:                 item.Extra,
 				ProxyID:               item.ProxyID,
-				Concurrency:           item.Concurrency,
-				Priority:              item.Priority,
+				Concurrency:           concurrency,
+				ConcurrencySet:        item.Concurrency != nil,
+				Priority:              priority,
+				PrioritySet:           item.Priority != nil,
 				RateMultiplier:        item.RateMultiplier,
 				GroupIDs:              item.GroupIDs,
 				ExpiresAt:             item.ExpiresAt,
@@ -2398,6 +2450,7 @@ func toServiceBulkUpdateAccountFilters(filters *BulkUpdateAccountFilters) *servi
 		return nil
 	}
 	return &service.BulkUpdateAccountFilters{
+		SupplierID:  filters.SupplierID,
 		Platform:    filters.Platform,
 		Type:        filters.Type,
 		Status:      filters.Status,

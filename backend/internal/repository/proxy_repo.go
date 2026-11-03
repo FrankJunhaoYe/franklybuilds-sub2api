@@ -221,8 +221,16 @@ func lockProxyProbeIdentity(ctx context.Context, client *dbent.Client, proxyID i
 	return identity, rows.Err()
 }
 
+const supplierBalanceInvalidationForProxySQL = `WITH supplier_balances AS (
+			UPDATE suppliers s SET revision = revision + 1, balance = NULL, balance_status = 'unknown',
+				balance_error = '', balance_updated_at = NULL, balance_checked_at = NULL
+			WHERE s.deleted_at IS NULL AND EXISTS (SELECT 1 FROM accounts a
+				WHERE a.proxy_id = $1 AND a.deleted_at IS NULL AND ` + supplierBalanceSourceAccountSQL + `)
+			RETURNING s.id
+		) `
+
 func invalidateProxyProbeSnapshots(ctx context.Context, exec sqlExecutor, proxyID int64) ([]int64, error) {
-	rows, err := exec.QueryContext(ctx, `
+	rows, err := exec.QueryContext(ctx, supplierBalanceInvalidationForProxySQL+`
 		UPDATE accounts
 		SET extra = COALESCE(extra, '{}'::jsonb)
 				- 'upstream_billing_probe'
@@ -763,7 +771,7 @@ func (r *proxyRepository) sweepOneExpiredProxyOnExec(ctx context.Context, exec s
 	// Match the current proxy even after an earlier fallback. Keep the first
 	// origin so manual revert still restores the originally assigned proxy.
 	if target == nil {
-		rows, err = exec.QueryContext(ctx, `
+		rows, err = exec.QueryContext(ctx, supplierBalanceInvalidationForProxySQL+`
 			UPDATE accounts SET proxy_id=NULL, proxy_fallback_origin_id=COALESCE(proxy_fallback_origin_id,$1),
 				extra=CASE
 					WHEN type='apikey' AND extra ? 'upstream_billing_probe'
@@ -774,7 +782,7 @@ func (r *proxyRepository) sweepOneExpiredProxyOnExec(ctx context.Context, exec s
 			WHERE proxy_id=$1 AND deleted_at IS NULL
 			RETURNING id`, proxyID)
 	} else {
-		rows, err = exec.QueryContext(ctx, `
+		rows, err = exec.QueryContext(ctx, supplierBalanceInvalidationForProxySQL+`
 			UPDATE accounts SET proxy_id=$2, proxy_fallback_origin_id=COALESCE(proxy_fallback_origin_id,$1),
 				extra=CASE
 					WHEN type='apikey' AND extra ? 'upstream_billing_probe'

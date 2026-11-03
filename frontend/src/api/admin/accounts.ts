@@ -46,6 +46,7 @@ export async function list(
   page: number = 1,
   pageSize: number = 20,
   filters?: {
+    supplier_id?: string | number
     platform?: string
     type?: string
     status?: string
@@ -88,6 +89,7 @@ export async function getUpstreamBillingRatesWithEtag(
   page: number = 1,
   pageSize: number = 20,
   filters?: {
+    supplier_id?: string | number
     platform?: string
     type?: string
     status?: string
@@ -121,6 +123,7 @@ export async function listWithEtag(
   page: number = 1,
   pageSize: number = 20,
   filters?: {
+    supplier_id?: string | number
     platform?: string
     type?: string
     status?: string
@@ -724,6 +727,7 @@ export async function syncFromCrs(params: {
 export async function exportData(options?: {
   ids?: number[]
   filters?: {
+    supplier_id?: string | number
     platform?: string
     type?: string
     status?: string
@@ -739,7 +743,8 @@ export async function exportData(options?: {
   if (options?.ids && options.ids.length > 0) {
     params.ids = options.ids.join(',')
   } else if (options?.filters) {
-    const { platform, type, status, group, privacy_mode, search, sort_by, sort_order } = options.filters
+    const { supplier_id, platform, type, status, group, privacy_mode, search, sort_by, sort_order } = options.filters
+    if (supplier_id !== undefined && supplier_id !== '') params.supplier_id = String(supplier_id)
     if (platform) params.platform = platform
     if (type) params.type = type
     if (status) params.status = status

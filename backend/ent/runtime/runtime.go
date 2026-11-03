@@ -36,6 +36,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/securitysecret"
 	"github.com/Wei-Shaw/sub2api/ent/setting"
 	"github.com/Wei-Shaw/sub2api/ent/subscriptionplan"
+	"github.com/Wei-Shaw/sub2api/ent/supplier"
 	"github.com/Wei-Shaw/sub2api/ent/tlsfingerprintprofile"
 	"github.com/Wei-Shaw/sub2api/ent/usagecleanuptask"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
@@ -226,34 +227,38 @@ func init() {
 	accountDescExtra := accountFields[5].Descriptor()
 	// account.DefaultExtra holds the default value on creation for the extra field.
 	account.DefaultExtra = accountDescExtra.Default.(func() map[string]interface{})
+	// accountDescSupplierDisabled is the schema descriptor for supplier_disabled field.
+	accountDescSupplierDisabled := accountFields[8].Descriptor()
+	// account.DefaultSupplierDisabled holds the default value on creation for the supplier_disabled field.
+	account.DefaultSupplierDisabled = accountDescSupplierDisabled.Default.(bool)
 	// accountDescConcurrency is the schema descriptor for concurrency field.
-	accountDescConcurrency := accountFields[8].Descriptor()
+	accountDescConcurrency := accountFields[10].Descriptor()
 	// account.DefaultConcurrency holds the default value on creation for the concurrency field.
 	account.DefaultConcurrency = accountDescConcurrency.Default.(int)
 	// accountDescPriority is the schema descriptor for priority field.
-	accountDescPriority := accountFields[10].Descriptor()
+	accountDescPriority := accountFields[12].Descriptor()
 	// account.DefaultPriority holds the default value on creation for the priority field.
 	account.DefaultPriority = accountDescPriority.Default.(int)
 	// accountDescRateMultiplier is the schema descriptor for rate_multiplier field.
-	accountDescRateMultiplier := accountFields[11].Descriptor()
+	accountDescRateMultiplier := accountFields[13].Descriptor()
 	// account.DefaultRateMultiplier holds the default value on creation for the rate_multiplier field.
 	account.DefaultRateMultiplier = accountDescRateMultiplier.Default.(float64)
 	// accountDescStatus is the schema descriptor for status field.
-	accountDescStatus := accountFields[12].Descriptor()
+	accountDescStatus := accountFields[14].Descriptor()
 	// account.DefaultStatus holds the default value on creation for the status field.
 	account.DefaultStatus = accountDescStatus.Default.(string)
 	// account.StatusValidator is a validator for the "status" field. It is called by the builders before save.
 	account.StatusValidator = accountDescStatus.Validators[0].(func(string) error)
 	// accountDescAutoPauseOnExpired is the schema descriptor for auto_pause_on_expired field.
-	accountDescAutoPauseOnExpired := accountFields[16].Descriptor()
+	accountDescAutoPauseOnExpired := accountFields[18].Descriptor()
 	// account.DefaultAutoPauseOnExpired holds the default value on creation for the auto_pause_on_expired field.
 	account.DefaultAutoPauseOnExpired = accountDescAutoPauseOnExpired.Default.(bool)
 	// accountDescSchedulable is the schema descriptor for schedulable field.
-	accountDescSchedulable := accountFields[17].Descriptor()
+	accountDescSchedulable := accountFields[19].Descriptor()
 	// account.DefaultSchedulable holds the default value on creation for the schedulable field.
 	account.DefaultSchedulable = accountDescSchedulable.Default.(bool)
 	// accountDescSessionWindowStatus is the schema descriptor for session_window_status field.
-	accountDescSessionWindowStatus := accountFields[25].Descriptor()
+	accountDescSessionWindowStatus := accountFields[27].Descriptor()
 	// account.SessionWindowStatusValidator is a validator for the "session_window_status" field. It is called by the builders before save.
 	account.SessionWindowStatusValidator = accountDescSessionWindowStatus.Validators[0].(func(string) error)
 	accountgroupFields := schema.AccountGroup{}.Fields()
@@ -1918,6 +1923,93 @@ func init() {
 	subscriptionplan.DefaultUpdatedAt = subscriptionplanDescUpdatedAt.Default.(func() time.Time)
 	// subscriptionplan.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
 	subscriptionplan.UpdateDefaultUpdatedAt = subscriptionplanDescUpdatedAt.UpdateDefault.(func() time.Time)
+	supplierMixin := schema.Supplier{}.Mixin()
+	supplierMixinHooks1 := supplierMixin[1].Hooks()
+	supplier.Hooks[0] = supplierMixinHooks1[0]
+	supplierMixinInters1 := supplierMixin[1].Interceptors()
+	supplier.Interceptors[0] = supplierMixinInters1[0]
+	supplierMixinFields0 := supplierMixin[0].Fields()
+	_ = supplierMixinFields0
+	supplierFields := schema.Supplier{}.Fields()
+	_ = supplierFields
+	// supplierDescCreatedAt is the schema descriptor for created_at field.
+	supplierDescCreatedAt := supplierMixinFields0[0].Descriptor()
+	// supplier.DefaultCreatedAt holds the default value on creation for the created_at field.
+	supplier.DefaultCreatedAt = supplierDescCreatedAt.Default.(func() time.Time)
+	// supplierDescUpdatedAt is the schema descriptor for updated_at field.
+	supplierDescUpdatedAt := supplierMixinFields0[1].Descriptor()
+	// supplier.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	supplier.DefaultUpdatedAt = supplierDescUpdatedAt.Default.(func() time.Time)
+	// supplier.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	supplier.UpdateDefaultUpdatedAt = supplierDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// supplierDescName is the schema descriptor for name field.
+	supplierDescName := supplierFields[0].Descriptor()
+	// supplier.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	supplier.NameValidator = func() func(string) error {
+		validators := supplierDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// supplierDescBaseURL is the schema descriptor for base_url field.
+	supplierDescBaseURL := supplierFields[1].Descriptor()
+	// supplier.BaseURLValidator is a validator for the "base_url" field. It is called by the builders before save.
+	supplier.BaseURLValidator = func() func(string) error {
+		validators := supplierDescBaseURL.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(base_url string) error {
+			for _, fn := range fns {
+				if err := fn(base_url); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// supplierDescStatus is the schema descriptor for status field.
+	supplierDescStatus := supplierFields[2].Descriptor()
+	// supplier.DefaultStatus holds the default value on creation for the status field.
+	supplier.DefaultStatus = supplierDescStatus.Default.(string)
+	// supplier.StatusValidator is a validator for the "status" field. It is called by the builders before save.
+	supplier.StatusValidator = supplierDescStatus.Validators[0].(func(string) error)
+	// supplierDescNotes is the schema descriptor for notes field.
+	supplierDescNotes := supplierFields[3].Descriptor()
+	// supplier.DefaultNotes holds the default value on creation for the notes field.
+	supplier.DefaultNotes = supplierDescNotes.Default.(string)
+	// supplierDescBalanceAPIKey is the schema descriptor for balance_api_key field.
+	supplierDescBalanceAPIKey := supplierFields[5].Descriptor()
+	// supplier.DefaultBalanceAPIKey holds the default value on creation for the balance_api_key field.
+	supplier.DefaultBalanceAPIKey = supplierDescBalanceAPIKey.Default.(string)
+	// supplierDescBalanceStatus is the schema descriptor for balance_status field.
+	supplierDescBalanceStatus := supplierFields[7].Descriptor()
+	// supplier.DefaultBalanceStatus holds the default value on creation for the balance_status field.
+	supplier.DefaultBalanceStatus = supplierDescBalanceStatus.Default.(string)
+	// supplier.BalanceStatusValidator is a validator for the "balance_status" field. It is called by the builders before save.
+	supplier.BalanceStatusValidator = supplierDescBalanceStatus.Validators[0].(func(string) error)
+	// supplierDescBalanceError is the schema descriptor for balance_error field.
+	supplierDescBalanceError := supplierFields[8].Descriptor()
+	// supplier.DefaultBalanceError holds the default value on creation for the balance_error field.
+	supplier.DefaultBalanceError = supplierDescBalanceError.Default.(string)
+	// supplierDescRevision is the schema descriptor for revision field.
+	supplierDescRevision := supplierFields[11].Descriptor()
+	// supplier.DefaultRevision holds the default value on creation for the revision field.
+	supplier.DefaultRevision = supplierDescRevision.Default.(int64)
+	// supplierDescBalanceProbeSequence is the schema descriptor for balance_probe_sequence field.
+	supplierDescBalanceProbeSequence := supplierFields[12].Descriptor()
+	// supplier.DefaultBalanceProbeSequence holds the default value on creation for the balance_probe_sequence field.
+	supplier.DefaultBalanceProbeSequence = supplierDescBalanceProbeSequence.Default.(int64)
 	tlsfingerprintprofileMixin := schema.TLSFingerprintProfile{}.Mixin()
 	tlsfingerprintprofileMixinFields0 := tlsfingerprintprofileMixin[0].Fields()
 	_ = tlsfingerprintprofileMixinFields0

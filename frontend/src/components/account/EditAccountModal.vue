@@ -26,12 +26,15 @@
         <p class="input-hint">{{ t('admin.accounts.notesHint') }}</p>
       </div>
 
+      <SupplierAccountField v-if="account.type === 'apikey'" v-model="selectedSupplierID" :suppliers="suppliers" :supplier="supplier" />
+
       <!-- API Key fields (only for apikey type) -->
       <div v-if="account.type === 'apikey'" class="space-y-4">
-        <div v-if="!isCNApiKeyAccount || editApiProtocol !== 'adaptive'">
+        <div v-if="selectedSupplier || !isCNApiKeyAccount || editApiProtocol !== 'adaptive'">
           <label class="input-label">{{ t('admin.accounts.baseUrl') }}</label>
           <input
             v-model="editBaseUrl"
+            :readonly="!!selectedSupplier"
             type="text"
             class="input"
             :placeholder="
@@ -48,12 +51,12 @@
           />
           <p v-if="baseUrlHint" class="input-hint">{{ baseUrlHint }}</p>
           <GrokBaseUrlPresets
-            v-if="account.platform === 'grok'"
+            v-if="!selectedSupplier && account.platform === 'grok'"
             class="mt-2"
             @select="editBaseUrl = $event"
           />
           <CnBaseUrlPresets
-            v-if="isCNApiKeyAccount && isCNProviderPlatform(account.platform)"
+            v-if="!selectedSupplier && isCNApiKeyAccount && isCNProviderPlatform(account.platform)"
             class="mt-2"
             :platform="cnPresetPlatform"
             :mode="cnPresetMode"
@@ -3379,6 +3382,8 @@
 </template>
 
 <script setup lang="ts">
+import SupplierAccountField from './SupplierAccountField.vue'
+import type { Supplier } from '@/api/admin/suppliers'
 import { ref, reactive, computed, watch, nextTick, onBeforeUnmount, onMounted } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAppStore } from '@/stores/app'
@@ -3497,6 +3502,8 @@ interface Props {
   account: Account | null
   proxies: Proxy[]
   groups: AdminGroup[]
+  suppliers?: Supplier[]
+  supplier?: Supplier | null
 }
 
 const props = defineProps<Props>()
@@ -3506,6 +3513,8 @@ const emit = defineEmits<{
 }>()
 
 const { t } = useI18n()
+const selectedSupplierID = ref<number | null>(props.supplier?.id ?? props.account?.supplier_id ?? null)
+const selectedSupplier = computed(() => props.supplier ?? props.suppliers?.find(item => item.id === selectedSupplierID.value))
 const appStore = useAppStore()
 const browserTimeZone = getBrowserTimeZone()
 
@@ -4594,6 +4603,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   mixedChannelWarningDetails.value = null
   mixedChannelWarningRawMessage.value = ''
   mixedChannelWarningAction.value = null
+  selectedSupplierID.value = props.supplier?.id ?? newAccount.supplier_id ?? null
   form.name = newAccount.name
   form.notes = newAccount.notes || ''
   form.proxy_id = newAccount.proxy_id
@@ -5602,6 +5612,15 @@ const persistGrokMediaEligibility = async (accountID: number, updatedAccount: Ac
 const submitUpdateAccount = async (accountID: number, updatePayload: Record<string, unknown>) => {
   submitting.value = true
   try {
+    if (props.account?.type === 'apikey' && (props.account.supplier_id || selectedSupplierID.value || selectedSupplier.value)) {
+      updatePayload.supplier_id = selectedSupplierID.value
+      if (selectedSupplier.value) {
+        updatePayload.supplier_id = selectedSupplier.value.id
+        const supplierCredentials: Record<string, unknown> = { ...(updatePayload.credentials as Record<string, unknown> | undefined), base_url: selectedSupplier.value.base_url }
+        delete supplierCredentials.api_base_urls
+        updatePayload.credentials = supplierCredentials
+      }
+    }
     let updatedAccount = await adminAPI.accounts.update(accountID, withAntigravityConfirmFlag(updatePayload))
     updatedAccount = await persistGrokMediaEligibility(accountID, updatedAccount)
     appStore.showSuccess(t('admin.accounts.accountUpdated'))
@@ -6422,4 +6441,10 @@ const handleMixedChannelConfirm = async () => {
 const handleMixedChannelCancel = () => {
   clearMixedChannelDialog()
 }
+
+watch([selectedSupplier, () => props.show], () => {
+  if (!props.show || !selectedSupplier.value) return
+  editBaseUrl.value = selectedSupplier.value.base_url
+  editAdaptiveBaseUrls.value = { chat_completions: selectedSupplier.value.base_url, anthropic: selectedSupplier.value.base_url, responses: selectedSupplier.value.base_url }
+}, { immediate: true, flush: 'post' })
 </script>

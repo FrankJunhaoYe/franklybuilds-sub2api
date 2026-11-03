@@ -15,6 +15,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/supplier"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -148,6 +149,40 @@ func (_u *AccountUpdate) SetNillableProxyID(v *int64) *AccountUpdate {
 // ClearProxyID clears the value of the "proxy_id" field.
 func (_u *AccountUpdate) ClearProxyID() *AccountUpdate {
 	_u.mutation.ClearProxyID()
+	return _u
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (_u *AccountUpdate) SetSupplierID(v int64) *AccountUpdate {
+	_u.mutation.SetSupplierID(v)
+	return _u
+}
+
+// SetNillableSupplierID sets the "supplier_id" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplierID(v *int64) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplierID(*v)
+	}
+	return _u
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (_u *AccountUpdate) ClearSupplierID() *AccountUpdate {
+	_u.mutation.ClearSupplierID()
+	return _u
+}
+
+// SetSupplierDisabled sets the "supplier_disabled" field.
+func (_u *AccountUpdate) SetSupplierDisabled(v bool) *AccountUpdate {
+	_u.mutation.SetSupplierDisabled(v)
+	return _u
+}
+
+// SetNillableSupplierDisabled sets the "supplier_disabled" field if the given value is not nil.
+func (_u *AccountUpdate) SetNillableSupplierDisabled(v *bool) *AccountUpdate {
+	if v != nil {
+		_u.SetSupplierDisabled(*v)
+	}
 	return _u
 }
 
@@ -584,6 +619,11 @@ func (_u *AccountUpdate) SetProxy(v *Proxy) *AccountUpdate {
 	return _u.SetProxyID(v.ID)
 }
 
+// SetSupplier sets the "supplier" edge to the Supplier entity.
+func (_u *AccountUpdate) SetSupplier(v *Supplier) *AccountUpdate {
+	return _u.SetSupplierID(v.ID)
+}
+
 // SetParentID sets the "parent" edge to the Account entity by ID.
 func (_u *AccountUpdate) SetParentID(id int64) *AccountUpdate {
 	_u.mutation.SetParentID(id)
@@ -662,6 +702,12 @@ func (_u *AccountUpdate) RemoveGroups(v ...*Group) *AccountUpdate {
 // ClearProxy clears the "proxy" edge to the Proxy entity.
 func (_u *AccountUpdate) ClearProxy() *AccountUpdate {
 	_u.mutation.ClearProxy()
+	return _u
+}
+
+// ClearSupplier clears the "supplier" edge to the Supplier entity.
+func (_u *AccountUpdate) ClearSupplier() *AccountUpdate {
+	_u.mutation.ClearSupplier()
 	return _u
 }
 
@@ -831,6 +877,9 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if value, ok := _u.mutation.Extra(); ok {
 		_spec.SetField(account.FieldExtra, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.SupplierDisabled(); ok {
+		_spec.SetField(account.FieldSupplierDisabled, field.TypeBool, value)
 	}
 	if value, ok := _u.mutation.ProxyFallbackOriginID(); ok {
 		_spec.SetField(account.FieldProxyFallbackOriginID, field.TypeInt64, value)
@@ -1025,6 +1074,35 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SupplierCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.SupplierTable,
+			Columns: []string{account.SupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SupplierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.SupplierTable,
+			Columns: []string{account.SupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {
@@ -1288,6 +1366,40 @@ func (_u *AccountUpdateOne) SetNillableProxyID(v *int64) *AccountUpdateOne {
 // ClearProxyID clears the value of the "proxy_id" field.
 func (_u *AccountUpdateOne) ClearProxyID() *AccountUpdateOne {
 	_u.mutation.ClearProxyID()
+	return _u
+}
+
+// SetSupplierID sets the "supplier_id" field.
+func (_u *AccountUpdateOne) SetSupplierID(v int64) *AccountUpdateOne {
+	_u.mutation.SetSupplierID(v)
+	return _u
+}
+
+// SetNillableSupplierID sets the "supplier_id" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplierID(v *int64) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplierID(*v)
+	}
+	return _u
+}
+
+// ClearSupplierID clears the value of the "supplier_id" field.
+func (_u *AccountUpdateOne) ClearSupplierID() *AccountUpdateOne {
+	_u.mutation.ClearSupplierID()
+	return _u
+}
+
+// SetSupplierDisabled sets the "supplier_disabled" field.
+func (_u *AccountUpdateOne) SetSupplierDisabled(v bool) *AccountUpdateOne {
+	_u.mutation.SetSupplierDisabled(v)
+	return _u
+}
+
+// SetNillableSupplierDisabled sets the "supplier_disabled" field if the given value is not nil.
+func (_u *AccountUpdateOne) SetNillableSupplierDisabled(v *bool) *AccountUpdateOne {
+	if v != nil {
+		_u.SetSupplierDisabled(*v)
+	}
 	return _u
 }
 
@@ -1724,6 +1836,11 @@ func (_u *AccountUpdateOne) SetProxy(v *Proxy) *AccountUpdateOne {
 	return _u.SetProxyID(v.ID)
 }
 
+// SetSupplier sets the "supplier" edge to the Supplier entity.
+func (_u *AccountUpdateOne) SetSupplier(v *Supplier) *AccountUpdateOne {
+	return _u.SetSupplierID(v.ID)
+}
+
 // SetParentID sets the "parent" edge to the Account entity by ID.
 func (_u *AccountUpdateOne) SetParentID(id int64) *AccountUpdateOne {
 	_u.mutation.SetParentID(id)
@@ -1802,6 +1919,12 @@ func (_u *AccountUpdateOne) RemoveGroups(v ...*Group) *AccountUpdateOne {
 // ClearProxy clears the "proxy" edge to the Proxy entity.
 func (_u *AccountUpdateOne) ClearProxy() *AccountUpdateOne {
 	_u.mutation.ClearProxy()
+	return _u
+}
+
+// ClearSupplier clears the "supplier" edge to the Supplier entity.
+func (_u *AccountUpdateOne) ClearSupplier() *AccountUpdateOne {
+	_u.mutation.ClearSupplier()
 	return _u
 }
 
@@ -2002,6 +2125,9 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	if value, ok := _u.mutation.Extra(); ok {
 		_spec.SetField(account.FieldExtra, field.TypeJSON, value)
 	}
+	if value, ok := _u.mutation.SupplierDisabled(); ok {
+		_spec.SetField(account.FieldSupplierDisabled, field.TypeBool, value)
+	}
 	if value, ok := _u.mutation.ProxyFallbackOriginID(); ok {
 		_spec.SetField(account.FieldProxyFallbackOriginID, field.TypeInt64, value)
 	}
@@ -2195,6 +2321,35 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(proxy.FieldID, field.TypeInt64),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.SupplierCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.SupplierTable,
+			Columns: []string{account.SupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeInt64),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.SupplierIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   account.SupplierTable,
+			Columns: []string{account.SupplierColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(supplier.FieldID, field.TypeInt64),
 			},
 		}
 		for _, k := range nodes {

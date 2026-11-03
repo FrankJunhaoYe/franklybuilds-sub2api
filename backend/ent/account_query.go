@@ -18,6 +18,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/ent/group"
 	"github.com/Wei-Shaw/sub2api/ent/predicate"
 	"github.com/Wei-Shaw/sub2api/ent/proxy"
+	"github.com/Wei-Shaw/sub2api/ent/supplier"
 	"github.com/Wei-Shaw/sub2api/ent/usagelog"
 )
 
@@ -30,6 +31,7 @@ type AccountQuery struct {
 	predicates        []predicate.Account
 	withGroups        *GroupQuery
 	withProxy         *ProxyQuery
+	withSupplier      *SupplierQuery
 	withParent        *AccountQuery
 	withChildren      *AccountQuery
 	withUsageLogs     *UsageLogQuery
@@ -108,6 +110,28 @@ func (_q *AccountQuery) QueryProxy() *ProxyQuery {
 			sqlgraph.From(account.Table, account.FieldID, selector),
 			sqlgraph.To(proxy.Table, proxy.FieldID),
 			sqlgraph.Edge(sqlgraph.M2O, false, account.ProxyTable, account.ProxyColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QuerySupplier chains the current query on the "supplier" edge.
+func (_q *AccountQuery) QuerySupplier() *SupplierQuery {
+	query := (&SupplierClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(account.Table, account.FieldID, selector),
+			sqlgraph.To(supplier.Table, supplier.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, account.SupplierTable, account.SupplierColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -397,6 +421,7 @@ func (_q *AccountQuery) Clone() *AccountQuery {
 		predicates:        append([]predicate.Account{}, _q.predicates...),
 		withGroups:        _q.withGroups.Clone(),
 		withProxy:         _q.withProxy.Clone(),
+		withSupplier:      _q.withSupplier.Clone(),
 		withParent:        _q.withParent.Clone(),
 		withChildren:      _q.withChildren.Clone(),
 		withUsageLogs:     _q.withUsageLogs.Clone(),
@@ -426,6 +451,17 @@ func (_q *AccountQuery) WithProxy(opts ...func(*ProxyQuery)) *AccountQuery {
 		opt(query)
 	}
 	_q.withProxy = query
+	return _q
+}
+
+// WithSupplier tells the query-builder to eager-load the nodes that are connected to
+// the "supplier" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *AccountQuery) WithSupplier(opts ...func(*SupplierQuery)) *AccountQuery {
+	query := (&SupplierClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withSupplier = query
 	return _q
 }
 
@@ -551,9 +587,10 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	var (
 		nodes       = []*Account{}
 		_spec       = _q.querySpec()
-		loadedTypes = [6]bool{
+		loadedTypes = [7]bool{
 			_q.withGroups != nil,
 			_q.withProxy != nil,
+			_q.withSupplier != nil,
 			_q.withParent != nil,
 			_q.withChildren != nil,
 			_q.withUsageLogs != nil,
@@ -591,6 +628,12 @@ func (_q *AccountQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Acco
 	if query := _q.withProxy; query != nil {
 		if err := _q.loadProxy(ctx, query, nodes, nil,
 			func(n *Account, e *Proxy) { n.Edges.Proxy = e }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withSupplier; query != nil {
+		if err := _q.loadSupplier(ctx, query, nodes, nil,
+			func(n *Account, e *Supplier) { n.Edges.Supplier = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -710,6 +753,38 @@ func (_q *AccountQuery) loadProxy(ctx context.Context, query *ProxyQuery, nodes 
 		nodes, ok := nodeids[n.ID]
 		if !ok {
 			return fmt.Errorf(`unexpected foreign-key "proxy_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
+func (_q *AccountQuery) loadSupplier(ctx context.Context, query *SupplierQuery, nodes []*Account, init func(*Account), assign func(*Account, *Supplier)) error {
+	ids := make([]int64, 0, len(nodes))
+	nodeids := make(map[int64][]*Account)
+	for i := range nodes {
+		if nodes[i].SupplierID == nil {
+			continue
+		}
+		fk := *nodes[i].SupplierID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(supplier.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "supplier_id" returned %v`, n.ID)
 		}
 		for i := range nodes {
 			assign(nodes[i], n)
@@ -873,6 +948,9 @@ func (_q *AccountQuery) querySpec() *sqlgraph.QuerySpec {
 		}
 		if _q.withProxy != nil {
 			_spec.Node.AddColumnOnce(account.FieldProxyID)
+		}
+		if _q.withSupplier != nil {
+			_spec.Node.AddColumnOnce(account.FieldSupplierID)
 		}
 		if _q.withParent != nil {
 			_spec.Node.AddColumnOnce(account.FieldParentAccountID)

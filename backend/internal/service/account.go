@@ -30,6 +30,10 @@ type Account struct {
 	Credentials             map[string]any
 	Extra                   map[string]any
 	ProxyID                 *int64
+	SupplierID              *int64
+	SupplierName            string
+	SupplierBaseURL         string
+	SupplierDisabled        bool
 	ProxyFallbackOriginID   *int64
 	ProxyFallbackOriginName *string // 仅展示用
 	Concurrency             int
@@ -149,7 +153,7 @@ type TempUnschedulableRule struct {
 }
 
 func (a *Account) IsActive() bool {
-	return a.Status == StatusActive
+	return a.Status == StatusActive && !a.SupplierDisabled
 }
 
 // IsSyntheticUITest reports whether the account belongs to an isolated UI load-test
@@ -1510,6 +1514,9 @@ func (a *Account) GetOpenAIBaseURL() string {
 	if !a.IsOpenAI() && !a.IsMultiProtocolAPIKey() {
 		return ""
 	}
+	if a.SupplierID != nil {
+		return strings.TrimSpace(a.GetCredential("base_url"))
+	}
 	if a.IsMultiProtocolAPIKey() && a.IsAdaptiveAPIProtocol() {
 		if baseURLs, ok := a.Credentials["api_base_urls"].(map[string]any); ok {
 			if baseURL, ok := baseURLs[APIProtocolChatCompletions].(string); ok && strings.TrimSpace(baseURL) != "" {
@@ -1607,6 +1614,9 @@ func (a *Account) GetCNProtocolBaseURL(protocol string) string {
 	if a == nil || !a.IsMultiProtocolAPIKey() {
 		return ""
 	}
+	if a.SupplierID != nil {
+		return strings.TrimSpace(a.GetCredential("base_url"))
+	}
 	if a.IsAdaptiveAPIProtocol() {
 		if baseURLs, ok := a.Credentials["api_base_urls"].(map[string]any); ok {
 			if baseURL, ok := baseURLs[protocol].(string); ok && strings.TrimSpace(baseURL) != "" {
@@ -1652,6 +1662,9 @@ func (a *Account) GetAnthropicProtocolBaseURL() string {
 // 端点，不能拿来拼 OpenAI 路径，此时返回该供应商 × 模式的 Chat Completions
 // 默认 base（模型同步等协议族共用路径仍可用）。
 func (a *Account) GetOpenAIFormatBaseURL() string {
+	if a != nil && a.SupplierID != nil {
+		return strings.TrimSpace(a.GetCredential("base_url"))
+	}
 	if a == nil || !a.IsAnthropicProtocol() {
 		return a.GetOpenAIBaseURL()
 	}
