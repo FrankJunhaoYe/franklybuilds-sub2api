@@ -22,15 +22,15 @@
 | `main` | FranklyBuilds 的集成主线，承载已验收的上游更新和定制功能 | 从功能分支和同步分支合入。它是后续发布的代码来源，分支存在本身不代表已经部署。 |
 | `feature/frankly-warm-theme` | FranklyBuilds 暖色主题的开发分支 | 保留主题与字体定制，验证后合入 `origin/main`；继续开发时吸收主线更新。其他新功能另建主题明确的功能分支。 |
 
-### 已核实的状态（2026-10-30）
+### 同步起点与目标（2026-11-07）
 
-- `origin/upstream-baseline` 位于 `a3298b46e`。
-- `origin/main` 位于 `4ecf5397b`，其文件树与上述基线完全一致；历史额外包含初始化及合入基线的提交，**尚未包含暖色主题**。
-- `origin/feature/frankly-warm-theme` 位于 `e92e90d28`，比 `origin/main` 多 6 个主题提交，涉及 32 个文件，全部位于 `frontend/`；这批提交没有修改后端、前端依赖清单或锁文件。
-- 核查时 `upstream/main` 位于 `d851a3847`，比基线多 10 个提交。这是当时的同步差距，不代表这些更新已经合入本项目。
-- 本地当前分支为 `feature/frankly-warm-theme`。本地 `main` 位于基线提交，**跟踪 `upstream/main`，而非 `origin/main`**；`upstream-baseline` 当时仅有远程跟踪引用。
+- 同步起点 `origin/main` 为 `89512d6be`，已包含暖色主题、OpenAI Fast 请求档位计费、被动通道监测卡片和供应商管理。
+- 旧纯上游基线为 `a3298b46e`；本次完整接入目标为 `6b4b37db43443b5e88e424fe3c69602cc3810dfb`（版本文件 `0.2.20`）。
+- 同步分支为 `sync/upstream-20261107`。只有主线接入并验证祖先关系后，才推进远程 `upstream-baseline`。
+- 核查时没有开放 PR，也没有尚未合入主线的 origin 功能分支提交；保留的旧功能分支不代表仍有待合并功能。
+- 本地 main 已跟踪 origin/main，但可能落后远程。开始任务时仍须 fetch 并核对实际引用，不能依赖本文快照。
 
-以上是核查快照，开始任务时重新检查。不能用本地同名 `main` 代替 `origin/main`，不能在未核对 tracking 的情况下执行无参数 `git pull` 或 `git push`。本次新增工作文档也不等于主题分支已经合入主线。
+以上是本次同步的固定起点和目标，不代表部署状态。同步验证记录见 [docs/UPSTREAM_SYNC_20261107.md](docs/UPSTREAM_SYNC_20261107.md)。
 
 ## 开始任务前
 
@@ -58,7 +58,7 @@ git remote -v
 4. **保留行为并适配。** 同时保留上游修复和定制意图。不要对整棵树或所有冲突机械选择 `ours` / `theirs`。上游替换了组件或 API 时，将定制迁到新实现，并检查旧接入点是否失效。
 5. **验证后集成。** 按下文执行相关检查，记录上游 SHA、冲突处理、保留的定制、例外和验证结果，再将同步分支合入二开 `main`。上游同步应保留可追溯的祖先关系，避免 squash 掉整次上游历史。
 6. **推进基线。** 二开主线成功接入目标后，将 `upstream-baseline` 快进到同一个纯上游 SHA。不能把它指向包含二开改动的 merge commit，也不能在主线尚未接入时将其标为已同步。
-7. **更新在途定制。** 将更新后的二开主线合入仍在开发的功能分支，再验证其定制。当前暖色主题尚未进入 `origin/main`，只同步主线不足以证明主题已经兼容新上游。
+7. **更新在途定制。** 将更新后的二开主线合入仍在开发的功能分支，再验证其定制。已合入主线的定制也须随上游同步重新验证；不要把旧功能分支的存在当作仍有在途改动。
 
 用于检查范围的命令（在 fetch 后执行）：
 
@@ -83,7 +83,13 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 
 ## 必须保留的定制与接入点
 
-当前已实现的定制是暖色界面和字体体系。它保留原有业务流程，没有独立实现另一套网关或计费后端。主题详细说明见 [frontend/src/franklybuilds/README.md](frontend/src/franklybuilds/README.md)。
+当前必须保留的定制包括：
+
+- 暖色界面和字体体系，见 [frontend/src/franklybuilds/README.md](frontend/src/franklybuilds/README.md)。
+- OpenAI Fast 按处理后的出站请求档位计费，响应档位仅观察，免费 Fast 与 Claude 原规则保留，见 [docs/OPENAI_FAST_BILLING.md](docs/OPENAI_FAST_BILLING.md)。
+- 被动通道监测响应式卡片，入口为 `frontend/src/features/channel-monitor-v2/RelayPulseMatrix.vue` 和用户通道状态页。
+- 管理员供应商与共用账号管理，见 [openspec/changes/add-supplier-management/design.md](openspec/changes/add-supplier-management/design.md)。检查统一 URL、钱包及倍率同步、停用调度隔离、事务删除、权限和历史账务保留。
+- `249_supplier_management.sql` 与上游 `249_mcp_oauth.sql` 按完整文件名分别追踪，必须保留原名称和内容，并验证空库初始化与旧库升级。
 
 | 路径 | 作用与合并时检查内容 |
 | --- | --- |
@@ -111,7 +117,7 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 - `deploy/`、根目录 Dockerfile 和 `.github/workflows/`：部署与 CI。修改配置、依赖或运行时版本时，一并核对相关镜像、示例和流水线。
 - 数据服务使用 PostgreSQL 和 Redis。连接信息来自任务环境和实际配置，不能把上游文档中的本机配置当作本项目凭据。
 - 使用 pnpm；更改前端依赖时同步维护 `frontend/pnpm-lock.yaml`。不要引入另一套 npm/yarn 锁文件。
-- Go 版本读取 `backend/go.mod`，Node/pnpm/lint 版本读取当前 CI。核查时为 Go 1.27.3、Node 20、pnpm 9、golangci-lint 2.14.0；这些版本会随上游更新。
+- Go 版本读取 `backend/go.mod`，Node/pnpm/lint 版本读取当前 CI。核查时为 Go 1.27.3、Node 24、pnpm 9、golangci-lint 2.14.0；这些版本会随上游更新。
 - Ent/Wire 生成代码应通过 `backend/Makefile` 的 `generate` 流程更新，修改源 schema/provider 后检查生成差异，避免手改生成结果。
 - 已应用的 SQL 迁移受 checksum 校验保护，不改写内容、编号或换行符；新增迁移需检查与上游编号碰撞，已上线的定制迁移发生冲突时设计兼容方案，不能直接重编号掩盖问题。
 - 遵守 `.gitattributes`，SQL、Go、前端源码和脚本等使用规定的 LF；避免无关的全文件换行变更。
