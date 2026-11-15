@@ -117,7 +117,7 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 - `deploy/`、根目录 Dockerfile 和 `.github/workflows/`：部署与 CI。修改配置、依赖或运行时版本时，一并核对相关镜像、示例和流水线。
 - 数据服务使用 PostgreSQL 和 Redis。连接信息来自任务环境和实际配置，不能把上游文档中的本机配置当作本项目凭据。
 - 使用 pnpm；更改前端依赖时同步维护 `frontend/pnpm-lock.yaml`。不要引入另一套 npm/yarn 锁文件。
-- Go 版本读取 `backend/go.mod`，Node/pnpm/lint 版本读取当前 CI。核查时为 Go 1.27.3、Node 24、pnpm 9、golangci-lint 2.14.0；这些版本会随上游更新。
+- Go 版本读取 `backend/go.mod`，Node/pnpm/lint 版本读取当前 CI。核查时为 Go 1.27.4、Node 24、pnpm 9、golangci-lint 2.14.0；这些版本会随上游更新。1.27.4 同步用于 Docker、CI 和发布，修复 GO-2026-6859。
 - Ent/Wire 生成代码应通过 `backend/Makefile` 的 `generate` 流程更新，修改源 schema/provider 后检查生成差异，避免手改生成结果。
 - 已应用的 SQL 迁移受 checksum 校验保护，不改写内容、编号或换行符；新增迁移需检查与上游编号碰撞，已上线的定制迁移发生冲突时设计兼容方案，不能直接重编号掩盖问题。
 - 遵守 `.gitattributes`，SQL、Go、前端源码和脚本等使用规定的 LF；避免无关的全文件换行变更。

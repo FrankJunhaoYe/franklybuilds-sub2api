@@ -136,6 +136,7 @@ vite.config.js
 docs/*
 !docs/OPENAI_FAST_BILLING.md
 !docs/UPSTREAM_SYNC_20261107.md
+!docs/UPSTREAM_SYNC_20261115.md
 !docs/agent-resource-safety.md
 !docs/moego-json-batching.md
 !docs/admin-api-keys.md
