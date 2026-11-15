@@ -136,6 +136,7 @@ vite.config.js
 docs/*
 !docs/OPENAI_FAST_BILLING.md
 !docs/UPSTREAM_SYNC_20261107.md
+!docs/UPSTREAM_SYNC_20261115.md
 !docs/agent-resource-safety.md
 !docs/moego-json-batching.md
 !docs/admin-api-keys.md
@@ -144,6 +145,7 @@ docs/*
 !docs/PAYMENT_CN.md
 !docs/ADMIN_PAYMENT_INTEGRATION_API.md
 !docs/ASYNC_IMAGE_TASKS.md
+!docs/OPENAI_IMAGES_CODEX.md
 !docs/BATCH_IMAGE_MVP.md
 !docs/COMPOSITE_GROUPS.md
 !docs/PLUGIN_DEVELOPMENT.md

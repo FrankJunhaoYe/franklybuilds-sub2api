@@ -15,6 +15,15 @@ import (
 )
 
 func TestSupplierMCPMigrationsFreshAndUpgrade(t *testing.T) {
+	for _, version := range []string{"before_mcp", "0.2.20"} {
+		t.Run(version, func(t *testing.T) {
+			testSupplierMigrationsUpgrade(t, version)
+		})
+	}
+}
+
+func testSupplierMigrationsUpgrade(t *testing.T, version string) {
+	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 	container, err := tcpostgres.Run(ctx, selectDockerImage(ctx, postgresImageTag),
@@ -32,12 +41,14 @@ func TestSupplierMCPMigrationsFreshAndUpgrade(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, db.Close()) })
 
-	// Reconstruct the previously shipped migration set without renaming either 249.
+	// Reconstruct each shipped migration set without renaming any migration.
 	previous := fstest.MapFS{}
 	entries, err := migrations.FS.ReadDir(".")
 	require.NoError(t, err)
 	for _, entry := range entries {
-		if entry.IsDir() || entry.Name() == "249_mcp_oauth.sql" {
+		if entry.IsDir() || entry.Name() == "249_add_usage_logs_api_key_cost_index_notx.sql" ||
+			entry.Name() == "250_openai_cache_write_ttl.sql" ||
+			(version == "before_mcp" && entry.Name() == "249_mcp_oauth.sql") {
 			continue
 		}
 		data, readErr := migrations.FS.ReadFile(entry.Name())
@@ -55,7 +66,7 @@ func TestSupplierMCPMigrationsFreshAndUpgrade(t *testing.T) {
 		WHERE filename = '249_supplier_management.sql'`).Scan(&oldChecksum))
 
 	require.NoError(t, ApplyMigrations(ctx, db))
-	require.NoError(t, ApplyMigrations(ctx, db), "a second startup must not reapply either migration")
+	require.NoError(t, ApplyMigrations(ctx, db), "a second startup must not reapply migrations")
 	var checksum, balance string
 	var disabled bool
 	require.NoError(t, db.QueryRowContext(ctx, `SELECT s.balance::text, a.supplier_disabled
@@ -70,7 +81,16 @@ func TestSupplierMCPMigrationsFreshAndUpgrade(t *testing.T) {
 	for _, database := range []*sql.DB{db, integrationDB} {
 		var count int
 		require.NoError(t, database.QueryRowContext(ctx, `SELECT COUNT(*) FROM schema_migrations
-			WHERE filename IN ('249_supplier_management.sql', '249_mcp_oauth.sql')`).Scan(&count))
+			WHERE filename IN ('249_supplier_management.sql', '249_mcp_oauth.sql',
+			'249_add_usage_logs_api_key_cost_index_notx.sql', '250_openai_cache_write_ttl.sql')`).Scan(&count))
+		require.Equal(t, 4, count)
+		var validIndex bool
+		require.NoError(t, database.QueryRowContext(ctx, `SELECT indisvalid FROM pg_index
+			WHERE indexrelid = 'idx_usage_logs_api_key_created_cost'::regclass`).Scan(&validIndex))
+		require.True(t, validIndex)
+		require.NoError(t, database.QueryRowContext(ctx, `SELECT COUNT(*) FROM information_schema.columns
+			WHERE table_schema = 'public' AND table_name = 'usage_logs'
+			AND column_name IN ('cache_creation_30m_tokens', 'cache_creation_12h_tokens')`).Scan(&count))
 		require.Equal(t, 2, count)
 		for _, table := range []string{"suppliers", "mcp_oauth_grants", "mcp_oauth_codes", "mcp_oauth_credentials"} {
 			var relation sql.NullString
