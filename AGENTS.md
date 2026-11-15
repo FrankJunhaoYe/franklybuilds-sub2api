@@ -89,6 +89,7 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 - OpenAI Fast 按处理后的出站请求档位计费，响应档位仅观察，免费 Fast 与 Claude 原规则保留，见 [docs/OPENAI_FAST_BILLING.md](docs/OPENAI_FAST_BILLING.md)。
 - 被动通道监测响应式卡片，入口为 `frontend/src/features/channel-monitor-v2/RelayPulseMatrix.vue` 和用户通道状态页。
 - 管理员供应商与共用账号管理，见 [openspec/changes/add-supplier-management/design.md](openspec/changes/add-supplier-management/design.md)。检查统一 URL、钱包及倍率同步、停用调度隔离、事务删除、权限和历史账务保留。
+- 版本号旁的官方新版红点提醒，与二开仓库的安装/回退来源分开处理，见 [docs/FORK_UPDATE_TRACKING.md](docs/FORK_UPDATE_TRACKING.md)。保留定时刷新、缓存到期和检查失败状态；不因官方更新直接安装官方程序。
 - `249_supplier_management.sql`、`249_mcp_oauth.sql` 与 `249_add_usage_logs_api_key_cost_index_notx.sql` 按完整文件名分别追踪，必须保留原名称和内容，并验证空库初始化与旧库升级。
 
 | 路径 | 作用与合并时检查内容 |

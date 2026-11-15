@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAppStore } from '@/stores/app'
 import { getPublicSettings } from '@/api/auth'
+import { checkUpdates } from '@/api/admin/system'
 import type { PublicSettings } from '@/types'
 
 function createDeferred<T>() {
@@ -88,6 +89,45 @@ describe('useAppStore', () => {
   afterEach(() => {
     vi.useRealTimers()
     localStorage.clear()
+  })
+
+  describe('版本检查缓存', () => {
+    it('20 分钟后重新检查，官方更新状态不永久停留在登录时的结果', async () => {
+      const response = { current_version: '0.2.21', latest_version: '0.2.21', has_update: false, cached: false, build_type: 'source', upstream: { latest_version: '0.2.21', has_update: false } }
+      vi.mocked(checkUpdates).mockReset().mockResolvedValueOnce(response).mockResolvedValueOnce({ ...response, upstream: { latest_version: '0.2.22', has_update: true } })
+      const store = useAppStore()
+      await store.fetchVersion()
+      expect(store.upstreamUpdate?.has_update).toBe(false)
+      await store.fetchVersion()
+      expect(checkUpdates).toHaveBeenCalledTimes(1)
+      vi.advanceTimersByTime(20 * 60 * 1000)
+      await store.fetchVersion()
+      expect(checkUpdates).toHaveBeenCalledTimes(2)
+      expect(store.upstreamUpdate?.has_update).toBe(true)
+      expect(store.hasUpdate).toBe(false)
+    })
+
+    it('刷新失败时保留官方更新提醒并标记检查失败', async () => {
+      vi.mocked(checkUpdates).mockReset().mockResolvedValueOnce({ current_version: '0.2.21', latest_version: '0.2.21', has_update: false, cached: false, build_type: 'source', upstream: { latest_version: '0.2.22', has_update: true } }).mockRejectedValueOnce(new Error('offline'))
+      const store = useAppStore()
+      await store.fetchVersion()
+      const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+      await store.fetchVersion(true)
+      expect(store.upstreamUpdate?.has_update).toBe(true)
+      expect(store.versionWarning).toBeTruthy()
+      log.mockRestore()
+    })
+
+    it('后端缓存过期且官方请求失败时保留本次会话已有的红点', async () => {
+      const response = { current_version: '0.2.21', latest_version: '0.2.21', has_update: false, cached: false, build_type: 'source', upstream: { latest_version: '0.2.22', has_update: true } }
+      vi.mocked(checkUpdates).mockReset().mockResolvedValueOnce(response).mockResolvedValueOnce({ ...response, upstream: { latest_version: '', has_update: false, warning: 'offline' } })
+      const store = useAppStore()
+      await store.fetchVersion()
+      vi.advanceTimersByTime(20 * 60 * 1000)
+      await store.fetchVersion()
+      expect(store.upstreamUpdate?.has_update).toBe(true)
+      expect(store.upstreamUpdate?.warning).toBe('offline')
+    })
   })
 
   // --- Toast 消息管理 ---
