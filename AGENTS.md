@@ -22,15 +22,15 @@
 | `main` | FranklyBuilds 的集成主线，承载已验收的上游更新和定制功能 | 从功能分支和同步分支合入。它是后续发布的代码来源，分支存在本身不代表已经部署。 |
 | `feature/frankly-warm-theme` | FranklyBuilds 暖色主题的开发分支 | 保留主题与字体定制，验证后合入 `origin/main`；继续开发时吸收主线更新。其他新功能另建主题明确的功能分支。 |
 
-### 同步起点与目标（2026-11-07）
+### 同步起点与目标（2026-11-15）
 
-- 同步起点 `origin/main` 为 `89512d6be`，已包含暖色主题、OpenAI Fast 请求档位计费、被动通道监测卡片和供应商管理。
-- 旧纯上游基线为 `a3298b46e`；本次完整接入目标为 `6b4b37db43443b5e88e424fe3c69602cc3810dfb`（版本文件 `0.2.20`）。
-- 同步分支为 `sync/upstream-20261107`。只有主线接入并验证祖先关系后，才推进远程 `upstream-baseline`。
+- 同步起点 `origin/main` 为 `ae0bcf116`，已包含暖色主题、OpenAI Fast 请求档位计费、被动通道监测卡片、供应商管理及上游 0.2.20。
+- 旧纯上游基线为 `6b4b37db4`；本次完整接入目标为 `530c5e3a4f9c73ca2b0881191d0ef8e0d82c5484`（版本文件 `0.2.21`）。
+- 同步分支为 `sync/upstream-20261115`。只有主线接入并验证祖先关系后，才推进远程 `upstream-baseline`。
 - 核查时没有开放 PR，也没有尚未合入主线的 origin 功能分支提交；保留的旧功能分支不代表仍有待合并功能。
 - 本地 main 已跟踪 origin/main，但可能落后远程。开始任务时仍须 fetch 并核对实际引用，不能依赖本文快照。
 
-以上是本次同步的固定起点和目标，不代表部署状态。同步验证记录见 [docs/UPSTREAM_SYNC_20261107.md](docs/UPSTREAM_SYNC_20261107.md)。
+以上是本次同步的固定起点和目标，不代表部署状态。同步验证记录见 [docs/UPSTREAM_SYNC_20261115.md](docs/UPSTREAM_SYNC_20261115.md)；上次记录见 [docs/UPSTREAM_SYNC_20261107.md](docs/UPSTREAM_SYNC_20261107.md)。
 
 ## 开始任务前
 
@@ -89,7 +89,7 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 - OpenAI Fast 按处理后的出站请求档位计费，响应档位仅观察，免费 Fast 与 Claude 原规则保留，见 [docs/OPENAI_FAST_BILLING.md](docs/OPENAI_FAST_BILLING.md)。
 - 被动通道监测响应式卡片，入口为 `frontend/src/features/channel-monitor-v2/RelayPulseMatrix.vue` 和用户通道状态页。
 - 管理员供应商与共用账号管理，见 [openspec/changes/add-supplier-management/design.md](openspec/changes/add-supplier-management/design.md)。检查统一 URL、钱包及倍率同步、停用调度隔离、事务删除、权限和历史账务保留。
-- `249_supplier_management.sql` 与上游 `249_mcp_oauth.sql` 按完整文件名分别追踪，必须保留原名称和内容，并验证空库初始化与旧库升级。
+- `249_supplier_management.sql`、`249_mcp_oauth.sql` 与 `249_add_usage_logs_api_key_cost_index_notx.sql` 按完整文件名分别追踪，必须保留原名称和内容，并验证空库初始化与旧库升级。
 
 | 路径 | 作用与合并时检查内容 |
 | --- | --- |
