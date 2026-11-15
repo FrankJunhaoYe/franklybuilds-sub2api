@@ -23,8 +23,9 @@
 ## 验证
 
 - 本地 Node 24.13.0 / pnpm 9.15.9：冻结锁文件安装、lint、typecheck、385 个文件 / 3,139 项测试及生产构建通过。
-- 本地 Go 1.27.3：Ent/Wire 生成结果一致。完整 unit、后端构建与页面验收结果将在完成后补充。
-- 本机 Docker daemon 未运行，数据库与 Redis 集成、golangci-lint 和安全检查由 PR 的 CI 验证，合入前须检查最终 head 的结果。
+- 本地 Go 1.27.3：Ent/Wire 生成结果一致，普通及 embed 后端构建通过。全量 unit 仅上游 cgroup 符号链接测试因 Windows 缺少创建链接权限而失败；未修改该测试或系统权限，Linux 覆盖由 CI 提供。
+- 本机 Docker daemon 未运行，数据库与 Redis 集成、golangci-lint 和安全检查由 [PR #6](https://github.com/FrankJunhaoYe/franklybuilds-sub2api/pull/6) 的 CI 验证，合入前检查其结果。Go 1.27.4 的首轮前后端安全检查已通过。
+- 用本地模拟 API 检查登录、用户仪表盘、供应商列表/详情和添加 Key 弹窗；供应商统一 URL、默认并发 100、优先级 1 和倍率同步开关保留。按本次任务要求停止扩大页面验收与本地测试范围，不将模拟数据检查表述为真实业务联调。
 
 ## 升级与限制
 
