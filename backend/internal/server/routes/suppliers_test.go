@@ -12,7 +12,7 @@ import (
 
 func TestSupplierAccountFilterRejectsMalformedScope(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	for _, query := range []string{"", "-1", "invalid", "9223372036854775808"} {
+	for _, query := range []string{"-1", "invalid", "%20", "9223372036854775808"} {
 		router := gin.New()
 		called := false
 		router.GET("/accounts", supplierAccountFilterMiddleware, func(c *gin.Context) { called = true; c.Status(http.StatusOK) })
@@ -29,7 +29,7 @@ func TestSupplierAccountFilterPreservesSelfManagedAndSupplierScopes(t *testing.T
 		path    string
 		id      int64
 		present bool
-	}{{"/accounts", 0, false}, {"/accounts?supplier_id=0", 0, true}, {"/accounts?supplier_id=7", 7, true}} {
+	}{{"/accounts", 0, false}, {"/accounts?supplier_id=", 0, false}, {"/accounts?supplier_id=0", 0, true}, {"/accounts?supplier_id=7", 7, true}} {
 		router := gin.New()
 		router.GET("/accounts", supplierAccountFilterMiddleware, func(c *gin.Context) {
 			id, present := service.SupplierAccountFilterFromContext(c.Request.Context())
