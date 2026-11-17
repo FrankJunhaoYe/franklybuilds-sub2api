@@ -64,7 +64,9 @@ release:
     owner: "{{ .Env.GITHUB_REPO_OWNER }}"
     name: "{{ .Env.GITHUB_REPO_NAME }}"
   draft: false
-  prerelease: auto
+  # custom.N is a production fork revision. The release plan validates its name.
+  prerelease: false
+  make_latest: true
   name_template: "Sub2API {{.Version}} (Simple)"
   # 跳过上传二进制包
   skip_upload: true

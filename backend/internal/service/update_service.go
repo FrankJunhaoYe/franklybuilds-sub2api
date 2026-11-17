@@ -14,6 +14,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strconv"
@@ -28,6 +29,7 @@ var (
 	ErrNoUpdateAvailable         = infraerrors.Conflict("ALREADY_UP_TO_DATE", "no update available; current version is latest")
 	ErrNoPublishedRelease        = infraerrors.NotFound("NO_PUBLISHED_RELEASE", "repository has no published release")
 	ErrRollbackVersionNotAllowed = infraerrors.BadRequest("ROLLBACK_VERSION_NOT_ALLOWED", "version is not in the allowed rollback list")
+	customVersionPattern         = regexp.MustCompile(`^v?(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)-custom\.(0|[1-9][0-9]*)$`)
 )
 
 const (
@@ -178,7 +180,7 @@ func (s *UpdateService) CheckUpdate(ctx context.Context, force bool) (*UpdateInf
 		version := strings.TrimPrefix(upstream.TagName, "v")
 		info.Upstream = &UpstreamUpdateInfo{
 			LatestVersion: version,
-			HasUpdate:     compareVersions(s.currentVersion, version) < 0,
+			HasUpdate:     compareUpstreamVersions(s.currentVersion, version) < 0,
 			ReleaseInfo:   &ReleaseInfo{Name: upstream.Name, Body: upstream.Body, PublishedAt: upstream.PublishedAt, HTMLURL: upstream.HTMLURL},
 		}
 	} else {
@@ -417,6 +419,9 @@ func (s *UpdateService) fetchRollbackCandidates(ctx context.Context) ([]*GitHubR
 		if v == "" || seen[v] {
 			continue
 		}
+		if strings.Contains(v, "-custom") && customVersionPattern.FindStringSubmatch(v) == nil {
+			continue
+		}
 		// Only versions strictly older than current (also excludes current itself)
 		if compareVersions(v, s.currentVersion) >= 0 {
 			continue
@@ -451,6 +456,9 @@ func (s *UpdateService) fetchLatestRelease(ctx context.Context) (*UpdateInfo, er
 	}
 
 	latestVersion := strings.TrimPrefix(release.TagName, "v")
+	if strings.Contains(latestVersion, "-custom") && customVersionPattern.FindStringSubmatch(latestVersion) == nil {
+		return nil, fmt.Errorf("invalid custom release version: %s", latestVersion)
+	}
 
 	assets := make([]Asset, len(release.Assets))
 	for i, a := range release.Assets {
@@ -663,7 +671,7 @@ func (s *UpdateService) getFromCache(ctx context.Context) (*UpdateInfo, error) {
 	info.Cached = true
 	info.HasUpdate = info.ReleaseInfo != nil && compareVersions(s.currentVersion, info.LatestVersion) < 0
 	if info.Upstream != nil {
-		info.Upstream.HasUpdate = compareVersions(s.currentVersion, info.Upstream.LatestVersion) < 0
+		info.Upstream.HasUpdate = compareUpstreamVersions(s.currentVersion, info.Upstream.LatestVersion) < 0
 	}
 	return info, nil
 }
@@ -683,8 +691,38 @@ func (s *UpdateService) saveToCache(ctx context.Context, info *UpdateInfo) {
 	_ = s.cache.SetUpdateInfo(ctx, string(data), time.Duration(updateCacheTTL)*time.Second)
 }
 
-// compareVersions compares two semantic versions
+// compareVersions orders fork releases by upstream base, then custom revision.
+// A legacy bare version precedes custom.0 at the same base. This is our release
+// policy, rather than SemVer's prerelease ordering for the -custom.N suffix.
 func compareVersions(current, latest string) int {
+	if base := compareUpstreamVersions(current, latest); base != 0 {
+		return base
+	}
+	currentCustom := customVersionPattern.FindStringSubmatch(current)
+	latestCustom := customVersionPattern.FindStringSubmatch(latest)
+	if currentCustom == nil && latestCustom == nil {
+		return 0
+	}
+	if currentCustom == nil {
+		return -1
+	}
+	if latestCustom == nil {
+		return 1
+	}
+	// Compare canonical integer strings without overflow or lexicographic .10/.9
+	// mistakes, including revision values larger than the machine integer range.
+	currentRevision, latestRevision := currentCustom[1], latestCustom[1]
+	if len(currentRevision) < len(latestRevision) {
+		return -1
+	}
+	if len(currentRevision) > len(latestRevision) {
+		return 1
+	}
+	return strings.Compare(currentRevision, latestRevision)
+}
+
+// compareUpstreamVersions ignores custom revisions when checking the official base.
+func compareUpstreamVersions(current, latest string) int {
 	currentParts := parseVersion(current)
 	latestParts := parseVersion(latest)
 

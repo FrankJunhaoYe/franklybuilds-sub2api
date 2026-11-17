@@ -18,6 +18,7 @@ FULL_CONFIG = Path('.goreleaser.yaml')
 SIMPLE_CONFIG = Path('.goreleaser.simple.yaml')
 VERSION_FILE = Path('backend/cmd/server/VERSION')
 VERSION_RE = re.compile(r'\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?')
+CUSTOM_VERSION_RE = re.compile(r'(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)-custom\.(?:0|[1-9][0-9]*)')
 
 
 def config(simple=False):
@@ -58,13 +59,13 @@ def plan(args):
     else:
         tag = args.ref
         version = tag.removeprefix('v')
-        if not tag.startswith('v') or not VERSION_RE.fullmatch(version):
-            raise ValueError('publishing requires a v-prefixed release version tag')
+        if not tag.startswith('v') or not CUSTOM_VERSION_RE.fullmatch(version):
+            raise ValueError('publishing requires a version tag in the form vX.Y.Z-custom.N')
         tagged_sha = subprocess.check_output(['git', 'rev-parse', '--verify', f'refs/tags/{tag}^{{commit}}'], text=True).strip()
         if sha != tagged_sha:
             raise ValueError('checkout does not match the selected release tag')
-    if not VERSION_RE.fullmatch(version):
-        raise ValueError('invalid VERSION')
+    if not CUSTOM_VERSION_RE.fullmatch(version):
+        raise ValueError('VERSION must have the form X.Y.Z-custom.N')
     VERSION_FILE.write_text(version + '\n')
     result = {'sha': sha, 'tag': tag, 'version': version,
               'owner_lower': os.environ.get('GITHUB_REPOSITORY_OWNER', '').lower(),

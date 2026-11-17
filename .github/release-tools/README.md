@@ -1,5 +1,9 @@
 # Release matrix
 
+Production tags in this fork use `vX.Y.Z-custom.N`. The upstream base `X.Y.Z` changes only after that official release has been integrated and verified; each later custom release increments `N`, starting at zero for a new upstream base. The initial version under this convention is `0.2.21-custom.0`. The release plan checks this naming convention for both publication and dry runs. Archive names, embedded version strings and image tags retain the entire suffix.
+
+These are stable fork releases: both GoReleaser configurations explicitly set `prerelease: false` and `make_latest: true`, allowing the admin updater to discover them through GitHub's latest-release endpoint. Use a full release for downloadable binaries and checksums. Simple releases contain only a Docker image and cannot supply in-place binary updates. Only create tags after choosing the next version and validating that exact source revision; the workflow does not decide or increment the custom revision automatically.
+
 The release workflow builds the frontend once, then runs each configured Go target on its own Linux runner. `CGO_ENABLED=0` permits cross-compilation. The target matrix is read from `.goreleaser.yaml`, including its exclusions; simple releases select Linux amd64 only.
 
 Each build uses GoReleaser OSS in snapshot mode with the selected release version and one target. Archive naming, bundled files, Go flags and release templates remain in the existing GoReleaser configurations. Every archive is accompanied by its source commit, target, version and SHA256. The publishing job verifies the complete matrix before building images or publishing. It uses GoReleaser's `extra_files` support to publish existing archives and checksums, with builds disabled. No Pro license is needed.

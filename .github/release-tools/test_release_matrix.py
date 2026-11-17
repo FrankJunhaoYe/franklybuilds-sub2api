@@ -30,7 +30,7 @@ class ReleaseMatrixTest(unittest.TestCase):
         for name in ('.goreleaser.yaml', '.goreleaser.simple.yaml'):
             shutil.copyfile(ROOT / name, name)
         Path('backend/cmd/server').mkdir(parents=True)
-        release.VERSION_FILE.write_text('9.8.7\n')
+        release.VERSION_FILE.write_text('9.8.7-custom.0\n')
 
     def fixture_artifacts(self, simple=False):
         directory = Path('release-input')
@@ -126,10 +126,33 @@ class ReleaseMatrixTest(unittest.TestCase):
         with patch.object(subprocess, 'check_output', return_value='a' * 40 + '\n'):
             with self.assertRaisesRegex(ValueError, 'version tag'):
                 release.plan(args)
-        args.ref = 'v9.8.7'
+        args.ref = 'v9.8.7-custom.0'
         with patch.object(subprocess, 'check_output', side_effect=['a' * 40 + '\n', 'b' * 40 + '\n']):
             with self.assertRaisesRegex(ValueError, 'does not match'):
                 release.plan(args)
+
+    def test_custom_release_is_stable_and_preserves_full_version(self):
+        for simple in (False, True):
+            with self.subTest(simple=simple):
+                self.assertIs(release.config(simple)['release']['prerelease'], False)
+                release.generate_config(argparse.Namespace(mode='publish', simple=simple, output='publisher.yaml'))
+                data = yaml.safe_load(Path('publisher.yaml').read_text())
+                self.assertIs(data['release']['prerelease'], False)
+                self.assertIs(data['release']['make_latest'], True)
+        with patch.dict(os.environ, {'GITHUB_OUTPUT': 'outputs'}), patch.object(subprocess, 'check_output', return_value='a' * 40 + '\n'):
+            release.plan(argparse.Namespace(ref='v0.2.21-custom.10', dry_run=False, simple=False))
+        output = dict(line.split('=', 1) for line in Path('outputs').read_text().splitlines())
+        self.assertEqual(output['version'], '0.2.21-custom.10')
+        self.assertEqual(output['tag'], 'v0.2.21-custom.10')
+        self.assertEqual(release.VERSION_FILE.read_text(), '0.2.21-custom.10\n')
+        self.assertEqual(release.archive_name(output['version'], {'goos': 'linux', 'goarch': 'amd64'}),
+                         'sub2api_0.2.21-custom.10_linux_amd64.tar.gz')
+
+    def test_publication_rejects_names_outside_custom_convention(self):
+        for tag in ('v0.2.21', 'v0.2.21-rc.1', 'v0.2.21-custom.-1', 'v0.2.21-custom.01', 'v0.2.21-custom.1.extra'):
+            with self.subTest(tag=tag), patch.object(subprocess, 'check_output', return_value='a' * 40 + '\n'):
+                with self.assertRaisesRegex(ValueError, 'vX.Y.Z-custom.N'):
+                    release.plan(argparse.Namespace(ref=tag, dry_run=False, simple=False))
 
     def test_dry_run_plan_resolves_matrix_without_a_new_tag(self):
         with patch.dict(os.environ, {'GITHUB_OUTPUT': 'outputs', 'GITHUB_REPOSITORY_OWNER': 'ExampleOwner'}), patch.object(subprocess, 'check_output', return_value='a' * 40 + '\n'):
@@ -170,11 +193,12 @@ class ReleaseMatrixTest(unittest.TestCase):
                 log_path = Path(f'docker-{simple}.log').resolve()
                 env = {**os.environ, 'PATH': str(fake_bin.resolve()) + os.pathsep + os.environ['PATH'],
                        'DOCKER_LOG': str(log_path), 'RUNNER_TEMP': self.temp.name,
-                       'RELEASE_VERSION': '9.8.7', 'RELEASE_SHA': 'a' * 40, 'GITHUB_REPOSITORY': 'ExampleOwner/sub2api',
+                       'RELEASE_VERSION': '9.8.7-custom.10', 'RELEASE_SHA': 'a' * 40, 'GITHUB_REPOSITORY': 'ExampleOwner/sub2api',
                        'DRY_RUN': 'false', 'SIMPLE_RELEASE': str(simple).lower(), 'DOCKERHUB_USERNAME': 'fixturehub'}
                 subprocess.run(['bash', str(ROOT / '.github/release-tools/release-images.sh')], env=env, check=True)
                 log = log_path.read_text()
                 self.assertIn('--push', log)
+                self.assertIn('ghcr.io/exampleowner/sub2api:9.8.7-custom.10', log)
                 self.assertEqual(log.count('buildx build'), 1 if simple else 2)
                 if simple:
                     self.assertNotIn('fixturehub', log)
