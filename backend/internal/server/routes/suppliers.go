@@ -10,7 +10,7 @@ import (
 )
 
 func supplierAccountFilterMiddleware(c *gin.Context) {
-	if value, provided := c.GetQuery("supplier_id"); provided {
+	if value := c.Query("supplier_id"); value != "" {
 		id, err := strconv.ParseInt(value, 10, 64)
 		if err != nil || id < 0 {
 			response.BadRequest(c, "Invalid supplier ID")
