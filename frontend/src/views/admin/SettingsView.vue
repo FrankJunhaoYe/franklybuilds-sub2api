@@ -8420,6 +8420,9 @@
           />
 
           <!-- Provider Management -->
+          <BEpusdtManager
+            v-if="form.payment_enabled && form.payment_enabled_types.includes('bepusdt')"
+          />
           <PaymentProviderList
             v-if="form.payment_enabled"
             :providers="providers"
@@ -8988,6 +8991,7 @@ import {
 import ConfirmDialog from "@/components/common/ConfirmDialog.vue";
 import PaymentProviderList from "@/components/payment/PaymentProviderList.vue";
 import PaymentProviderDialog from "@/components/payment/PaymentProviderDialog.vue";
+import BEpusdtManager from "@/components/payment/BEpusdtManager.vue";
 import GroupBadge from "@/components/common/GroupBadge.vue";
 import GroupOptionItem from "@/components/common/GroupOptionItem.vue";
 import Toggle from "@/components/common/Toggle.vue";
@@ -12528,6 +12532,7 @@ async function saveBetaPolicySettings() {
 // ==================== Provider Management ====================
 
 const allPaymentTypes = computed(() => [
+  { value: "bepusdt", label: t("admin.settings.payment.providerBEpusdt") },
   { value: "easypay", label: t("payment.methods.easypay") },
   { value: "alipay", label: t("payment.methods.alipay") },
   { value: "wxpay", label: t("payment.methods.wxpay") },
@@ -12585,6 +12590,7 @@ const providerDialogRef = ref<InstanceType<
 > | null>(null);
 
 const providerKeyOptions = computed(() => [
+  { value: "bepusdt", label: t("admin.settings.payment.providerBEpusdt") },
   { value: "easypay", label: t("admin.settings.payment.providerEasypay") },
   { value: "alipay", label: t("admin.settings.payment.providerAlipay") },
   { value: "wxpay", label: t("admin.settings.payment.providerWxpay") },
