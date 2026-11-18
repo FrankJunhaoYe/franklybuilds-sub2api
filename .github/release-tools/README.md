@@ -1,6 +1,6 @@
 # Release matrix
 
-Production tags in this fork use `vX.Y.Z-custom.N`. The upstream base `X.Y.Z` changes only after that official release has been integrated and verified; each later custom release increments `N`, starting at zero for a new upstream base. The initial version under this convention is `0.2.21-custom.0`. The release plan checks this naming convention for both publication and dry runs. Archive names, embedded version strings and image tags retain the entire suffix.
+Production tags in this fork use `vX.Y.Z-custom.N`. The upstream base `X.Y.Z` changes only after that official release has been integrated and verified; each later custom release increments `N`, starting at zero for a new upstream base. After integrating upstream 0.2.22, the current source version is `0.2.22-custom.0`. The release plan checks this naming convention for both publication and dry runs. Archive names, embedded version strings and image tags retain the entire suffix.
 
 These are stable fork releases: both GoReleaser configurations explicitly set `prerelease: false` and `make_latest: true`, allowing the admin updater to discover them through GitHub's latest-release endpoint. Use a full release for downloadable binaries and checksums. Simple releases contain only a Docker image and cannot supply in-place binary updates. Only create tags after choosing the next version and validating that exact source revision; the workflow does not decide or increment the custom revision automatically.
 
