@@ -6,11 +6,13 @@
         @click="toggleDropdown"
         class="flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs transition-colors"
         :class="[
-          hasUpdate
+          hasAnyUpdate
             ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/50'
             : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-dark-800 dark:text-dark-400 dark:hover:bg-dark-700'
         ]"
-        :title="hasUpdate ? t('version.updateAvailable') : t('version.upToDate')"
+        :title="badgeStatus"
+        :aria-label="`v${currentVersion}: ${badgeStatus}`"
+        :aria-expanded="dropdownOpen"
       >
         <span v-if="currentVersion" class="font-medium">v{{ currentVersion }}</span>
         <span
@@ -18,12 +20,13 @@
           class="h-3 w-12 animate-pulse rounded bg-gray-200 font-medium dark:bg-dark-600"
         ></span>
         <!-- Update indicator -->
-        <span v-if="hasUpdate" class="relative flex h-2 w-2">
-          <span
-            class="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-75"
-          ></span>
-          <span class="relative inline-flex h-2 w-2 rounded-full bg-amber-500"></span>
-        </span>
+        <span
+          v-if="hasAnyUpdate"
+          data-testid="update-dot"
+          aria-hidden="true"
+          class="h-2 w-2 rounded-full bg-red-500"
+        ></span>
+        <span class="sr-only" role="status" aria-atomic="true">{{ badgeStatus }}</span>
       </button>
 
       <!-- Dropdown -->
@@ -89,7 +92,7 @@
                   <span v-else class="text-2xl font-bold text-gray-400 dark:text-dark-500">--</span>
                   <!-- Show check mark when up to date -->
                   <span
-                    v-if="!hasUpdate"
+                    v-if="!hasAnyUpdate && !checkWarning && releaseInfo"
                     class="flex h-5 w-5 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30"
                   >
                     <svg
@@ -107,12 +110,46 @@
                 </div>
                 <p class="mt-1 text-xs text-gray-500 dark:text-dark-400">
                   {{
-                    hasUpdate
+                    checkWarning
+                      ? t('version.checkFailed')
+                      : hasUpdate
                       ? t('version.latestVersion') + ': v' + latestVersion
-                      : t('version.upToDate')
+                      : releaseInfo
+                        ? t('version.upToDate')
+                        : t('version.noForkRelease')
                   }}
                 </p>
+                <a
+                  :href="`https://github.com/${GITHUB_REPO}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="mt-2 block text-xs text-gray-600 underline dark:text-dark-300"
+                >{{ t('version.viewFork') }}</a>
               </div>
+
+              <div
+                v-if="upstreamUpdate?.has_update"
+                class="mb-3 space-y-2 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800/50 dark:bg-red-900/20"
+              >
+                <p class="text-sm font-medium text-red-700 dark:text-red-300">
+                  {{ t('version.upstreamAvailable', { version: upstreamUpdate.latest_version }) }}
+                </p>
+                <p class="text-xs text-gray-600 dark:text-dark-300">
+                  {{ t('version.upstreamSyncHint') }}
+                </p>
+                <a
+                  v-if="upstreamUpdate.release_info?.html_url"
+                  :href="upstreamUpdate.release_info.html_url"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="block text-xs text-red-700 underline dark:text-red-300"
+                >{{ t('version.viewUpstreamRelease') }}</a>
+              </div>
+              <p
+                v-if="checkWarning"
+                role="status"
+                class="mb-3 text-xs text-amber-700 dark:text-amber-400"
+              >{{ t('version.checkFailedHint') }}</p>
 
               <!-- Priority 1: Update error (must check before hasUpdate) -->
               <div v-if="updateError" class="space-y-2">
@@ -638,7 +675,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore, useAppStore } from '@/stores'
 import {
@@ -651,9 +688,8 @@ import {
 import { useClipboard } from '@/composables/useClipboard'
 import Icon from '@/components/icons/Icon.vue'
 
-const GITHUB_REPO = 'Wei-Shaw/sub2api'
-// Docker Hub image published by CI (tags carry no "v" prefix, e.g. weishaw/sub2api:0.1.146)
-const DOCKER_IMAGE = 'weishaw/sub2api'
+const GITHUB_REPO = 'FrankJunhaoYe/franklybuilds-sub2api'
+const DOCKER_IMAGE = 'ghcr.io/frankjunhaoye/sub2api'
 
 const { t } = useI18n()
 
@@ -675,6 +711,17 @@ const currentVersion = computed(() => appStore.currentVersion || props.version |
 const latestVersion = computed(() => appStore.latestVersion)
 const hasUpdate = computed(() => appStore.hasUpdate)
 const releaseInfo = computed(() => appStore.releaseInfo)
+const upstreamUpdate = computed(() => appStore.upstreamUpdate)
+const hasAnyUpdate = computed(() => hasUpdate.value || !!upstreamUpdate.value?.has_update)
+const checkWarning = computed(() => appStore.versionWarning || upstreamUpdate.value?.warning)
+const badgeStatus = computed(() => {
+  if (upstreamUpdate.value?.has_update) {
+    return t('version.upstreamAvailable', { version: upstreamUpdate.value.latest_version })
+  }
+  if (checkWarning.value) return t('version.checkFailed')
+  if (hasUpdate.value) return t('version.updateAvailable')
+  return releaseInfo.value ? t('version.upToDate') : t('version.noForkRelease')
+})
 const buildType = computed(() => appStore.buildType)
 
 // Update process states (local to this component)
@@ -909,15 +956,31 @@ function handleClickOutside(event: MouseEvent) {
   }
 }
 
-onMounted(() => {
-  if (isAdmin.value) {
-    // Use cached version if available, otherwise fetch
-    appStore.fetchVersion(false)
+let versionCheckTimer: ReturnType<typeof setInterval> | undefined
+function checkVersion() {
+  if (isAdmin.value && document.visibilityState !== 'hidden') {
+    void appStore.fetchVersion(false)
   }
+}
+watch(isAdmin, (admin) => {
+  if (versionCheckTimer) clearInterval(versionCheckTimer)
+  versionCheckTimer = undefined
+  if (admin) {
+    checkVersion()
+    versionCheckTimer = setInterval(checkVersion, 20 * 60 * 1000)
+  }
+}, { immediate: true })
+
+onMounted(() => {
+  document.addEventListener('visibilitychange', checkVersion)
+  window.addEventListener('focus', checkVersion)
   document.addEventListener('click', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
+  if (versionCheckTimer) clearInterval(versionCheckTimer)
+  document.removeEventListener('visibilitychange', checkVersion)
+  window.removeEventListener('focus', checkVersion)
   document.removeEventListener('click', handleClickOutside)
 })
 </script>

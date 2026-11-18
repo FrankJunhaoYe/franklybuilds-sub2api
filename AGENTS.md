@@ -75,6 +75,15 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 
 常规 Git 发布目标是 `origin`；只有任务明确涉及向原项目贡献时才操作上游 PR。是否提交、推送、合并或部署由当前任务范围决定，编写文档或检查分支不包含这些操作。
 
+### 版本命名与发布（2026-11-17 起）
+
+- 统一使用 `X.Y.Z-custom.N`，Git 标签为 `vX.Y.Z-custom.N`。`X.Y.Z` 表示已经同步并验收的 Sub2API 官方版本，`N` 是从 0 开始的定制发布序号。
+- 完成官方 `0.2.21` 的同步后，首个定制版本为 `0.2.21-custom.0`。此后自己的功能、修复或来自其他二开的代码，每次新的正式发布依次使用 `custom.1`、`custom.2`、`custom.3`；同一发布中的多个提交不必逐提交递增。
+- 官方发布下一版时先保留当前基线，只提醒需要同步；完整接入并验收官方 `0.2.22` 后才改为 `0.2.22-custom.0`，保留既有定制并将序号归零。仅引用其他二开的新代码不代表已经接入官方下一版。
+- `backend/cmd/server/VERSION`、发布标签、安装包和镜像标签使用一致的完整版本。完成官方 0.2.22 接入后，当前源码版本为 `0.2.22-custom.0`；后续更新按实际已发布版本递增，不复用旧标签或同版本替换安装包。定制序号不得为负数或含多余前导零。
+- `custom.N` 在本项目中表示正式版本修订号。发布配置须保持 `prerelease: false`、`make_latest: true`，使后台更新接口可以发现它；实际发布带安装包的 Release 后，后台才提供可安装更新。镜像专用的 simple release 不提供二进制在线更新安装包。
+- 更新/回退比较先比较官方基线，再按数字比较定制序号（`.10 > .9`）；旧的无后缀版本在同一基线下排在 `custom.0` 之前。官方更新提醒只比较 `X.Y.Z`，不把定制序号作为官方版本差异。
+
 ### 开发任务收尾（2026-11-03 起）
 
 - 功能或修复开发完成并验证后，默认提交、推送至 `origin` 并创建 PR，不再只留下未提交改动。
@@ -89,6 +98,7 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 - OpenAI Fast 按处理后的出站请求档位计费，响应档位仅观察，免费 Fast 与 Claude 原规则保留，见 [docs/OPENAI_FAST_BILLING.md](docs/OPENAI_FAST_BILLING.md)。
 - 被动通道监测响应式卡片，入口为 `frontend/src/features/channel-monitor-v2/RelayPulseMatrix.vue` 和用户通道状态页。
 - 管理员供应商与共用账号管理，见 [openspec/changes/add-supplier-management/design.md](openspec/changes/add-supplier-management/design.md)。检查统一 URL、钱包及倍率同步、停用调度隔离、事务删除、权限和历史账务保留。
+- 版本号旁的官方新版红点提醒，与二开仓库的安装/回退来源分开处理，见 [docs/FORK_UPDATE_TRACKING.md](docs/FORK_UPDATE_TRACKING.md)。保留定时刷新、缓存到期和检查失败状态；不因官方更新直接安装官方程序。
 - `249_supplier_management.sql`、`249_mcp_oauth.sql` 与 `249_add_usage_logs_api_key_cost_index_notx.sql` 按完整文件名分别追踪，必须保留原名称和内容，并验证空库初始化与旧库升级。
 
 | 路径 | 作用与合并时检查内容 |
