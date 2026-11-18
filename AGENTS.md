@@ -22,15 +22,15 @@
 | `main` | FranklyBuilds 的集成主线，承载已验收的上游更新和定制功能 | 从功能分支和同步分支合入。它是后续发布的代码来源，分支存在本身不代表已经部署。 |
 | `feature/frankly-warm-theme` | FranklyBuilds 暖色主题的开发分支 | 保留主题与字体定制，验证后合入 `origin/main`；继续开发时吸收主线更新。其他新功能另建主题明确的功能分支。 |
 
-### 同步起点与目标（2026-11-15）
+### 同步起点与目标（2026-11-18）
 
-- 同步起点 `origin/main` 为 `ae0bcf116`，已包含暖色主题、OpenAI Fast 请求档位计费、被动通道监测卡片、供应商管理及上游 0.2.20。
-- 旧纯上游基线为 `6b4b37db4`；本次完整接入目标为 `530c5e3a4f9c73ca2b0881191d0ef8e0d82c5484`（版本文件 `0.2.21`）。
-- 同步分支为 `sync/upstream-20261115`。只有主线接入并验证祖先关系后，才推进远程 `upstream-baseline`。
-- 核查时没有开放 PR，也没有尚未合入主线的 origin 功能分支提交；保留的旧功能分支不代表仍有待合并功能。
+- 同步起点 `origin/main` 为 `d7482320d`，已包含暖色主题、OpenAI Fast 请求档位计费、被动通道监测卡片、供应商管理、空供应商筛选修复及上游 0.2.21。
+- 旧纯上游基线为 `530c5e3a4`；本次完整接入目标为 `69d2fae91318359e4e25c0171eaf70364dad3629`（版本文件 `0.2.22`）。
+- 同步分支为 `sync/upstream-20261118`。只有主线接入并验证祖先关系后，才推进远程 `upstream-baseline`。
+- 核查时独立更新功能 PR #7（`feature/fork-update-tracking`）仍开放，保持单独处理；暖色主题分支没有尚未合入主线的提交。
 - 本地 main 已跟踪 origin/main，但可能落后远程。开始任务时仍须 fetch 并核对实际引用，不能依赖本文快照。
 
-以上是本次同步的固定起点和目标，不代表部署状态。同步验证记录见 [docs/UPSTREAM_SYNC_20261115.md](docs/UPSTREAM_SYNC_20261115.md)；上次记录见 [docs/UPSTREAM_SYNC_20261107.md](docs/UPSTREAM_SYNC_20261107.md)。
+以上是本次同步的固定起点和目标，不代表部署状态。同步验证记录见 [docs/UPSTREAM_SYNC_20261118.md](docs/UPSTREAM_SYNC_20261118.md)；上次记录见 [docs/UPSTREAM_SYNC_20261115.md](docs/UPSTREAM_SYNC_20261115.md)。
 
 ## 开始任务前
 
