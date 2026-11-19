@@ -94,6 +94,7 @@ function defineFlag<K extends keyof PublicSettings>(
  * public-settings-driven switch; see the "Adding a new flag" checklist above.
  */
 export const FeatureFlags = {
+  lottery: defineFlag({ key: 'lottery_enabled', mode: 'opt-in', label: 'Recharge Draws' }),
   channelMonitor: defineFlag({
     key: 'channel_monitor_enabled',
     mode: 'opt-out',
@@ -133,6 +134,11 @@ export const FeatureFlags = {
     key: 'affiliate_enabled',
     mode: 'opt-in',
     label: 'Affiliate',
+  }),
+  supportTickets: defineFlag({
+    key: 'support_ticket_enabled',
+    mode: 'opt-in',
+    label: 'Support Tickets',
   }),
   // Read-only: enabled by the deployment's MCP_PUBLIC_URL, not an admin toggle.
   mcp: defineFlag({

@@ -23,6 +23,17 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    services:
+      lottery-postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: sub2api_lottery_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: lottery_ci
+        ports:
+          - 5432/tcp
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 5s --health-retries 10
     steps:
       - uses: actions/checkout@v6
       - name: Check Docker Compose simple mode environment
@@ -41,6 +52,8 @@ jobs:
         run: make test-unit
       - name: Integration tests
         working-directory: backend
+        env:
+          LOTTERY_TEST_DSN: postgres://postgres:lottery_ci@127.0.0.1:${{ job.services.lottery-postgres.ports[5432] }}/sub2api_lottery_test?sslmode=disable
         run: make test-integration
 
   frontend:

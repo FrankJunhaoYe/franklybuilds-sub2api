@@ -32,6 +32,21 @@ func RegisterAdminRoutes(
 	admin.Use(middleware.AdminComplianceGuard(settingService))
 	// 受限密钥的账户操作走独立资源校验，普通管理员保持原处理器。
 	admin.Use(h.Admin.Account.ScopedAdminKeyAccounts)
+	if h.Lottery != nil {
+		lottery := admin.Group("/lottery")
+		lottery.GET("/settings", h.Lottery.Settings)
+		lottery.PUT("/settings", h.Lottery.SaveSettings)
+		lottery.DELETE("/pools/:id", h.Lottery.DeletePool)
+		lottery.DELETE("/pools/:id/prizes/:prize_id", h.Lottery.DeletePrize)
+		lottery.GET("/pools", h.Lottery.AdminPools)
+		lottery.POST("/pools", h.Lottery.SavePool)
+		lottery.PUT("/pools/:id", h.Lottery.SavePool)
+		lottery.POST("/pools/:id/prizes", h.Lottery.SavePrize)
+		lottery.PUT("/pools/:id/prizes/:prize_id", h.Lottery.SavePrize)
+		lottery.GET("/records", h.Lottery.AdminRecords)
+		lottery.GET("/ledger", h.Lottery.AdminLedger)
+		lottery.GET("/invitations", h.Lottery.AdminInvitations)
+	}
 	{
 		// 部署与运营合规确认
 		registerAdminComplianceRoutes(admin, h)
@@ -51,6 +66,7 @@ func RegisterAdminRoutes(
 
 		// 公告管理
 		registerAnnouncementRoutes(admin, h)
+		registerSupportTicketRoutes(admin, h)
 
 		// OpenAI OAuth
 		registerOpenAIOAuthRoutes(admin, h)
@@ -453,6 +469,20 @@ func registerAnnouncementRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
 		announcements.PUT("/:id", h.Admin.Announcement.Update)
 		announcements.DELETE("/:id", h.Admin.Announcement.Delete)
 		announcements.GET("/:id/read-status", h.Admin.Announcement.ListReadStatus)
+	}
+}
+
+// registerSupportTicketRoutes serves the admin side of support tickets. The
+// service answers SUPPORT_TICKET_DISABLED while the feature switch is off.
+func registerSupportTicketRoutes(admin *gin.RouterGroup, h *handler.Handlers) {
+	tickets := admin.Group("/support-tickets")
+	{
+		tickets.GET("", h.SupportTicket.AdminList)
+		tickets.GET("/summary", h.SupportTicket.AdminSummary)
+		tickets.GET("/:id", h.SupportTicket.AdminGet)
+		tickets.POST("/:id/messages", h.SupportTicket.AdminReply)
+		tickets.POST("/:id/status", h.SupportTicket.AdminSetStatus)
+		tickets.DELETE("/:id", h.SupportTicket.AdminDelete)
 	}
 }
 

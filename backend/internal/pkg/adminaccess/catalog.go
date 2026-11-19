@@ -20,6 +20,8 @@ type permissionDefinition struct {
 // 接口按方法和 Gin 完整路径精确登记；新增接口不会继承同目录权限。
 // 全站权限与账户规则独立，选中分组绝不会隐式授予全站操作。
 var definitions = []permissionDefinition{
+	{Permission{"lottery.read", "读取抽奖奖池与记录", "财务", "global"}, []string{"GET /lottery/settings", "GET /lottery/pools", "GET /lottery/records", "GET /lottery/ledger"}},
+	{Permission{"lottery.write", "管理抽奖奖池与奖品", "财务", "global"}, []string{"PUT /lottery/settings", "POST /lottery/pools", "PUT /lottery/pools/:id", "DELETE /lottery/pools/:id", "POST /lottery/pools/:id/prizes", "PUT /lottery/pools/:id/prizes/:prize_id", "DELETE /lottery/pools/:id/prizes/:prize_id"}},
 	{Permission{"accounts.identity.read", "读取账户邮箱、套餐及创建时间（不含令牌）", "账户", "account"}, []string{"GET /accounts/:id"}},
 	{Permission{"accounts.usage.read", "读取及主动刷新授权账户额度与快照", "账户", "account"}, []string{"GET /accounts/:id/usage", "POST /accounts/usage/batch"}},
 	{Permission{"accounts.stats.read", "读取账户用量与费用统计", "账户", "account"}, []string{"GET /accounts/:id/today-stats", "POST /accounts/today-stats/batch", "GET /accounts/:id/stats"}},

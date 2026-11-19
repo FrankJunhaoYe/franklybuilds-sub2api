@@ -948,6 +948,7 @@ func TestRelay_BeforeWriteClientTracksDownstreamPerTurn(t *testing.T) {
 	defer cancel()
 
 	wroteStates := make(chan bool, 3)
+	releaseFirstWrite := make(chan struct{})
 	done := make(chan *RelayExit, 1)
 	stopErr := errors.New("stop after second-turn error")
 	go func() {
@@ -956,7 +957,12 @@ func TestRelay_BeforeWriteClientTracksDownstreamPerTurn(t *testing.T) {
 			clientConn,
 			upstreamConn,
 			[]byte(`{"type":"response.create","model":"gpt-5.3-codex","input":[]}`),
-			RelayOptions{BeforeWriteClient: func(_ coderws.MessageType, payload []byte, wroteDownstream bool) error {
+			RelayOptions{AfterClientWrite: func(_ coderws.MessageType, _ []byte, _ error) {
+				select {
+				case <-releaseFirstWrite:
+				case <-ctx.Done():
+				}
+			}, BeforeWriteClient: func(_ coderws.MessageType, payload []byte, wroteDownstream bool) error {
 				wroteStates <- wroteDownstream
 				if strings.Contains(string(payload), `"type":"error"`) {
 					return stopErr
@@ -980,6 +986,7 @@ func TestRelay_BeforeWriteClientTracksDownstreamPerTurn(t *testing.T) {
 		payload: []byte(`{"type":"response.create","model":"gpt-5.3-codex","input":[]}`),
 	}
 	require.Eventually(t, func() bool { return len(upstreamConn.Writes()) == 2 }, time.Second, time.Millisecond)
+	close(releaseFirstWrite)
 	upstreamConn.readCh <- passthroughTestFrame{
 		msgType: coderws.MessageText,
 		payload: []byte(`{"type":"error","error":{"type":"usage_limit_reached"}}`),
