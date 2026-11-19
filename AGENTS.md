@@ -94,6 +94,8 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 
 当前必须保留的定制包括：
 
+- `0.2.23-custom.1` 移植网站工单（默认关闭）、指定用户公告与充值／邀请抽奖（默认关闭）。同步时保留公告可见性与已读范围、工单所有权、支付与退款的抽奖账本、管理员调账的同事务写入，以及 WebSocket 每轮独立的下行输出状态。抽奖入口和规则见 [docs/lottery.md](docs/lottery.md) 和 [docs/lottery-invitations.md](docs/lottery-invitations.md)。
+
 - 暖色界面和字体体系，见 [frontend/src/franklybuilds/README.md](frontend/src/franklybuilds/README.md)。
 - OpenAI Fast 按处理后的出站请求档位计费，响应档位仅观察，免费 Fast 与 Claude 原规则保留，见 [docs/OPENAI_FAST_BILLING.md](docs/OPENAI_FAST_BILLING.md)。
 - 被动通道监测响应式卡片，入口为 `frontend/src/features/channel-monitor-v2/RelayPulseMatrix.vue` 和用户通道状态页。

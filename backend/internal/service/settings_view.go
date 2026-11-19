@@ -225,6 +225,10 @@ type SystemSettings struct {
 	ModelPlazaDescription   string `json:"model_plaza_description"`
 	PluginManagementEnabled bool   `json:"plugin_management_enabled"`
 
+	// Support tickets ("网站工单") switch + form config
+	SupportTicketEnabled bool                `json:"support_ticket_enabled"`
+	SupportTicket        SupportTicketConfig `json:"support_ticket_config"`
+
 	// Claude Code version check
 	MinClaudeCodeVersion string
 	MaxClaudeCodeVersion string
@@ -412,6 +416,10 @@ type PublicSettings struct {
 	ModelPlazaEnabled       bool `json:"model_plaza_enabled"`
 	ModelPlazaRequireAuth   bool `json:"model_plaza_require_auth"`
 	PluginManagementEnabled bool `json:"plugin_management_enabled"`
+
+	// Support tickets ("网站工单") feature switch
+	SupportTicketEnabled bool `json:"support_ticket_enabled"`
+	LotteryEnabled       bool `json:"lottery_enabled"`
 
 	// Affiliate (邀请返利) feature toggle
 	AffiliateEnabled bool `json:"affiliate_enabled"`

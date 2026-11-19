@@ -24,6 +24,15 @@ func RegisterUserRoutes(
 	authenticated.Use(panelRateLimiter.Global())
 	// 用户管理面变更类操作入审计（含 TOTP 启用/禁用、step-up 验证、密码修改等安全事件）
 	authenticated.Use(gin.HandlerFunc(auditLog))
+	if h.Lottery != nil {
+		lottery := authenticated.Group("/lottery")
+		lottery.Use(handler.LotteryVisitorContext)
+		lottery.GET("/pools", h.Lottery.Pools)
+		lottery.GET("/pools/:id/invite", h.Lottery.InviteLink)
+		lottery.POST("/invitations/claim", h.Lottery.ClaimInvitation)
+		lottery.POST("/pools/:id/draw", h.Lottery.Draw)
+		lottery.GET("/records", h.Lottery.Records)
+	}
 	{
 		// 用户接口
 		user := authenticated.Group("/user")
@@ -124,6 +133,18 @@ func RegisterUserRoutes(
 		{
 			announcements.GET("", h.Announcement.List)
 			announcements.POST("/:id/read", h.Announcement.MarkRead)
+		}
+
+		// 网站工单（关闭时 service 返回 SUPPORT_TICKET_DISABLED）
+		tickets := authenticated.Group("/support-tickets")
+		{
+			tickets.GET("", h.SupportTicket.List)
+			tickets.POST("", h.SupportTicket.Create)
+			tickets.GET("/summary", h.SupportTicket.Summary)
+			tickets.GET("/:id", h.SupportTicket.Get)
+			tickets.POST("/:id/messages", h.SupportTicket.Reply)
+			tickets.POST("/:id/close", h.SupportTicket.Close)
+			tickets.POST("/:id/reopen", h.SupportTicket.Reopen)
 		}
 
 		// 卡密兑换

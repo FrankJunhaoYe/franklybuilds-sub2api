@@ -335,6 +335,10 @@ type SystemSettings struct {
 	ModelPlazaDescription   string `json:"model_plaza_description"`
 	PluginManagementEnabled bool   `json:"plugin_management_enabled"`
 
+	// Support tickets ("网站工单") switch + form config
+	SupportTicketEnabled bool                        `json:"support_ticket_enabled"`
+	SupportTicket        service.SupportTicketConfig `json:"support_ticket_config"`
+
 	// 风控中心功能开关
 	RiskControlEnabled bool `json:"risk_control_enabled"`
 
@@ -445,6 +449,9 @@ type PublicSettings struct {
 	ModelPlazaEnabled       bool `json:"model_plaza_enabled"`
 	ModelPlazaRequireAuth   bool `json:"model_plaza_require_auth"`
 	PluginManagementEnabled bool `json:"plugin_management_enabled"`
+
+	SupportTicketEnabled bool `json:"support_ticket_enabled"`
+	LotteryEnabled       bool `json:"lottery_enabled"`
 
 	AffiliateEnabled bool `json:"affiliate_enabled"`
 

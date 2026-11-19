@@ -27,6 +27,12 @@ FRONTEND_CRITICAL_VITEST := \
 	src/views/user/__tests__/ChannelStatusView.mode.spec.ts \
 	src/components/user/profile/__tests__/ProfileInfoCard.spec.ts \
 	src/components/user/profile/__tests__/ProfileIdentityBindingsSection.spec.ts \
+	src/features/support-tickets/__tests__/TicketComponents.spec.ts \
+	src/views/admin/__tests__/SupportTicketsAdmin.spec.ts \
+	src/views/user/__tests__/SupportTicketsViews.spec.ts \
+	src/components/admin/announcements/__tests__/AnnouncementTargetingEditor.spec.ts \
+	src/views/admin/__tests__/LotteryView.spec.ts \
+	src/views/user/__tests__/LotteryView.spec.ts \
 	src/views/admin/__tests__/SettingsView.spec.ts \
 	src/features/channel-monitor-v2/__tests__/designSystem.structure.spec.ts \
 	src/features/channel-monitor-v2/__tests__/monitorFormat.spec.ts \

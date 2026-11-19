@@ -106,7 +106,7 @@ type RelayTraceEvent struct {
 type relayState struct {
 	usage                   Usage
 	turnUsage               Usage
-	turnWroteDownstream     atomic.Bool
+	turnWroteDownstream     atomic.Pointer[atomic.Bool]
 	requestModelMu          sync.RWMutex
 	requestModel            string
 	pendingTurnStart        atomic.Pointer[time.Time]
@@ -186,6 +186,7 @@ func Relay(
 	}
 	startAt := nowFn()
 	state := &relayState{requestModel: result.RequestModel, isFirstTokenEvent: options.IsFirstTokenEvent}
+	state.turnWroteDownstream.Store(new(atomic.Bool))
 	if isClientResponseCreateFrame(firstMessageType, firstClientMessage) {
 		firstTurnStartedAt := options.FirstTurnStartedAt
 		if firstTurnStartedAt.IsZero() {
@@ -224,13 +225,13 @@ func Relay(
 			// The policy-enforcing client connection has accepted this turn.
 			// Reset before the write so an immediate upstream response cannot race
 			// with the transport returning from WriteFrame.
-			state.turnWroteDownstream.Store(false)
+			state.turnWroteDownstream.Store(new(atomic.Bool))
 		}
 		err := writeUpstream(msgType, payload)
 		if err != nil && isResponseCreate {
 			// The relay exits on this error, but retain the previous turn's state
 			// for accurate diagnostics while the two relay goroutines settle.
-			state.turnWroteDownstream.Store(true)
+			state.turnWroteDownstream.Load().Store(true)
 		}
 		return err
 	}
@@ -575,10 +576,15 @@ func runUpstreamToClient(
 			return
 		}
 		markActivity()
+		// Pin this frame to its turn before delivery can trigger the next request.
+		var turnOutput *atomic.Bool
+		if state != nil {
+			turnOutput = state.turnWroteDownstream.Load()
+		}
 		if beforeWriteClient != nil {
 			wroteDownstreamInTurn := wroteDownstream
-			if state != nil {
-				wroteDownstreamInTurn = state.turnWroteDownstream.Load()
+			if turnOutput != nil {
+				wroteDownstreamInTurn = turnOutput.Load()
 			}
 			if err := beforeWriteClient(msgType, payload, wroteDownstreamInTurn); err != nil {
 				emitRelayTrace(onTrace, RelayTraceEvent{
@@ -658,8 +664,8 @@ func runUpstreamToClient(
 			return
 		}
 		wroteDownstream = true
-		if state != nil {
-			state.turnWroteDownstream.Store(true)
+		if turnOutput != nil {
+			turnOutput.Store(true)
 		}
 		if afterWriteClient != nil {
 			afterWriteClient(msgType, payload)
