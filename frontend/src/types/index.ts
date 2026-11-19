@@ -2537,7 +2537,32 @@ export interface TotpLogin2FARequest {
 
 // ==================== Scheduled Test Types ====================
 
+export interface AccountQualityRule {
+  models: string[]
+  action: 'observe' | 'model' | 'group' | 'account'
+  group_id?: number
+  failures: number
+  passes: number
+  max_ttft_ms?: number
+  min_tps?: number
+  max_error_percent?: number
+}
+
+export interface AccountQualityEvidence {
+  model: string
+  question: string
+  expected: string
+  answer: string
+  verdict: 'passed' | 'failed' | 'unknown'
+  reason?: string
+  ttft_ms?: number
+  tps?: number
+  error_percent?: number
+}
+
 export interface ScheduledTestPlan {
+  quality_rule?: AccountQualityRule
+  quality_state?: Record<string, { failures: number; passes: number; held: boolean }>
   id: number
   account_id: number
   model_id: string
@@ -2552,6 +2577,7 @@ export interface ScheduledTestPlan {
 }
 
 export interface ScheduledTestResult {
+  quality_evidence?: AccountQualityEvidence[]
   id: number
   plan_id: number
   status: string
@@ -2564,6 +2590,7 @@ export interface ScheduledTestResult {
 }
 
 export interface CreateScheduledTestPlanRequest {
+  quality_rule?: AccountQualityRule
   account_id: number
   model_id: string
   cron_expression: string
@@ -2573,6 +2600,8 @@ export interface CreateScheduledTestPlanRequest {
 }
 
 export interface UpdateScheduledTestPlanRequest {
+  quality_rule?: AccountQualityRule
+  clear_quality?: boolean
   model_id?: string
   cron_expression?: string
   enabled?: boolean

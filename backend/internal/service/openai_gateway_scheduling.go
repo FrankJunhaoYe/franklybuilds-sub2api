@@ -906,6 +906,7 @@ func (s *OpenAIGatewayService) selectAccountForModelWithExclusions(ctx context.C
 // selectAccountForModelWithExclusionsStickyHit 与 selectAccountForModelWithExclusions 相同，
 // 另返回账号是否来自粘性会话命中。
 func (s *OpenAIGatewayService) selectAccountForModelWithExclusionsStickyHit(ctx context.Context, groupID *int64, platform string, sessionHash string, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, stickyAccountID int64, requiredCapability OpenAIEndpointCapability, preferLowUpstreamRate bool) (*Account, bool, error) {
+	ctx = withQualityGroup(ctx, groupID)
 	platform = NormalizeOpenAICompatiblePlatform(platform)
 	if s.checkChannelPricingRestriction(ctx, groupID, requestedModel) {
 		slog.Warn("channel pricing restriction blocked request",
@@ -1140,6 +1141,7 @@ func (s *OpenAIGatewayService) SelectAccountWithLoadAwareness(ctx context.Contex
 }
 
 func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Context, groupID *int64, platform string, sessionHash string, requestedModel string, excludedIDs map[int64]struct{}, requireCompact bool, requiredCapability OpenAIEndpointCapability, useUpstreamTokenCost bool) (*AccountSelectionResult, error) {
+	ctx = withQualityGroup(ctx, groupID)
 	platform = NormalizeOpenAICompatiblePlatform(platform)
 	if s.checkChannelPricingRestriction(ctx, groupID, requestedModel) {
 		slog.Warn("channel pricing restriction blocked request",

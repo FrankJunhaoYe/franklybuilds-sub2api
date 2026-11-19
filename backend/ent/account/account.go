@@ -34,6 +34,8 @@ const (
 	FieldCredentials = "credentials"
 	// FieldExtra holds the string denoting the extra field in the database.
 	FieldExtra = "extra"
+	// FieldQualityHolds holds the string denoting the quality_holds field in the database.
+	FieldQualityHolds = "quality_holds"
 	// FieldProxyID holds the string denoting the proxy_id field in the database.
 	FieldProxyID = "proxy_id"
 	// FieldSupplierID holds the string denoting the supplier_id field in the database.
@@ -153,6 +155,7 @@ var Columns = []string{
 	FieldType,
 	FieldCredentials,
 	FieldExtra,
+	FieldQualityHolds,
 	FieldProxyID,
 	FieldSupplierID,
 	FieldSupplierDisabled,

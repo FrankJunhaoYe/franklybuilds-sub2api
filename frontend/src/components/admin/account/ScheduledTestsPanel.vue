@@ -96,7 +96,8 @@
               {{ t('admin.scheduledTests.enabled') }}
             </label>
           </div>
-          <div class="flex items-end">
+          <AccountQualityFields v-model="newPlan.quality_rule" :model="newPlan.model_id" :groups="groups ?? []" />
+          <div v-if="!newPlan.quality_rule" class="flex items-end">
             <div>
               <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                 <Toggle v-model="newPlan.auto_recover" />
@@ -117,7 +118,7 @@
           </button>
           <button
             @click="handleCreate"
-            :disabled="!newPlan.model_id || !newPlan.cron_expression || creating"
+            :disabled="!(newPlan.quality_rule ? newPlan.quality_rule.models.length : newPlan.model_id) || !newPlan.cron_expression || creating"
             class="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Icon v-if="creating" name="refresh" size="sm" class="animate-spin" :stroke-width="2" />
@@ -159,13 +160,15 @@
               <!-- Model -->
               <div class="min-w-0">
                 <div class="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  {{ plan.model_id }}
+                  {{ plan.quality_rule ? plan.quality_rule.models.join(', ') : plan.model_id }}
                 </div>
                 <div class="mt-0.5 font-mono text-xs text-gray-500 dark:text-gray-400">
                   {{ plan.cron_expression }}
                 </div>
               </div>
 
+              <span v-if="plan.quality_rule" class="text-xs">{{ t('admin.scheduledTests.quality.' + plan.quality_rule.action) }}</span>
+              <span v-if="Object.values(plan.quality_state ?? {}).some(state => state.held)" class="text-xs text-red-600">{{ t('admin.scheduledTests.quality.held') }}</span>
               <!-- Enabled Toggle -->
               <div class="flex items-center gap-1.5" @click.stop>
                 <Toggle
@@ -235,6 +238,7 @@
             class="border-t border-blue-100 bg-blue-50/50 px-4 py-3 dark:border-blue-900 dark:bg-blue-900/10"
             @click.stop
           >
+            <AccountQualityFields v-model="editForm.quality_rule" :model="editForm.model_id" :groups="groups ?? []" />
             <div class="mb-2 text-xs font-medium text-gray-600 dark:text-gray-400">
               {{ t('admin.scheduledTests.editPlan') }}
             </div>
@@ -306,7 +310,7 @@
                   {{ t('admin.scheduledTests.enabled') }}
                 </label>
               </div>
-              <div class="flex items-end">
+              <div v-if="!editForm.quality_rule" class="flex items-end">
                 <div>
                   <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
                     <Toggle v-model="editForm.auto_recover" />
@@ -327,7 +331,7 @@
               </button>
               <button
                 @click="handleEdit"
-                :disabled="!editForm.model_id || !editForm.cron_expression || updating"
+                :disabled="!(editForm.quality_rule ? editForm.quality_rule.models.length : editForm.model_id) || !editForm.cron_expression || updating"
                 class="flex items-center gap-1.5 rounded-lg bg-primary-500 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-primary-600 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <Icon v-if="updating" name="refresh" size="sm" class="animate-spin" :stroke-width="2" />
@@ -376,7 +380,7 @@
                           ? 'bg-green-100 text-green-700 dark:bg-green-500/20 dark:text-green-400'
                           : result.status === 'running'
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-500/20 dark:text-blue-400'
-                            : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
+                            : result.status === 'unknown' ? 'bg-gray-100 text-gray-700 dark:bg-dark-700 dark:text-gray-200' : 'bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400'
                       ]"
                     >
                       {{
@@ -384,7 +388,7 @@
                           ? t('admin.scheduledTests.success')
                           : result.status === 'running'
                             ? t('admin.scheduledTests.running')
-                            : t('admin.scheduledTests.failed')
+                            : result.status === 'unknown' ? t('admin.scheduledTests.quality.unknown') : t('admin.scheduledTests.failed')
                       }}
                     </span>
 
@@ -401,6 +405,13 @@
                 </div>
 
                 <!-- Response / Error (collapsible) -->
+                <div v-for="sample in result.quality_evidence" :key="sample.model" class="mt-2 border-t pt-2 text-xs">
+                  <strong>{{ sample.model }} · {{ t('admin.scheduledTests.quality.' + sample.verdict) }}</strong>
+                  <p>{{ sample.question }} · {{ t('admin.scheduledTests.quality.expected') }} {{ sample.expected }}</p>
+                  <p class="break-words">{{ t('admin.scheduledTests.quality.answer') }} {{ sample.answer || '—' }}</p>
+                  <p v-if="sample.reason">{{ t('admin.scheduledTests.quality.' + sample.reason) }}</p>
+                  <p v-if="sample.ttft_ms != null || sample.tps != null || sample.error_percent != null">TTFT {{ sample.ttft_ms?.toFixed(0) ?? '—' }} ms · TPS {{ sample.tps?.toFixed(1) ?? '—' }} · HTTP 4xx/5xx {{ sample.error_percent?.toFixed(1) ?? '—' }}%</p>
+                </div>
                 <div v-if="result.error_message" class="mt-2">
                   <div
                     class="cursor-pointer text-xs font-medium text-red-600 dark:text-red-400"
@@ -470,12 +481,13 @@ import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
 import Select, { type SelectOption } from '@/components/common/Select.vue'
 import Input from '@/components/common/Input.vue'
+import AccountQualityFields from './AccountQualityFields.vue'
 import Toggle from '@/components/common/Toggle.vue'
 import { Icon } from '@/components/icons'
 import { adminAPI } from '@/api/admin'
 import { useAppStore } from '@/stores/app'
 import { formatDateTime } from '@/utils/format'
-import type { ScheduledTestPlan, ScheduledTestResult } from '@/types'
+import type { AccountQualityRule, ScheduledTestPlan, ScheduledTestResult } from '@/types'
 
 const { t } = useI18n()
 const appStore = useAppStore()
@@ -483,6 +495,7 @@ const appStore = useAppStore()
 const props = defineProps<{
   show: boolean
   accountId: number | null
+  groups?: { id: number; name: string }[]
   modelOptions: SelectOption[]
 }>()
 
@@ -515,6 +528,7 @@ const editForm = reactive({
   cron_expression: '' as string,
   max_results: '100' as string,
   enabled: true,
+  quality_rule: undefined as AccountQualityRule | undefined,
   auto_recover: false
 })
 
@@ -523,6 +537,7 @@ const newPlan = reactive({
   cron_expression: '' as string,
   max_results: '100' as string,
   enabled: true,
+  quality_rule: undefined as AccountQualityRule | undefined,
   auto_recover: false
 })
 
@@ -531,6 +546,7 @@ const resetNewPlan = () => {
   newPlan.cron_expression = ''
   newPlan.max_results = '100'
   newPlan.enabled = true
+  newPlan.quality_rule = undefined
   newPlan.auto_recover = false
 }
 
@@ -564,17 +580,18 @@ const loadPlans = async () => {
 }
 
 const handleCreate = async () => {
-  if (!props.accountId || !newPlan.model_id || !newPlan.cron_expression) return
+  if (!props.accountId || !(newPlan.quality_rule ? newPlan.quality_rule.models.length : newPlan.model_id) || !newPlan.cron_expression) return
   creating.value = true
   try {
     const maxResults = Number(newPlan.max_results) || 100
     await adminAPI.scheduledTests.create({
       account_id: props.accountId,
-      model_id: newPlan.model_id,
+      model_id: newPlan.quality_rule?.models[0] || newPlan.model_id,
       cron_expression: newPlan.cron_expression,
       enabled: newPlan.enabled,
       max_results: maxResults,
-      auto_recover: newPlan.auto_recover
+      quality_rule: newPlan.quality_rule,
+      auto_recover: !newPlan.quality_rule && newPlan.auto_recover
     })
     appStore.showSuccess(t('admin.scheduledTests.createSuccess'))
     showAddForm.value = false
@@ -605,6 +622,7 @@ const startEdit = (plan: ScheduledTestPlan) => {
   editForm.model_id = plan.model_id
   editForm.cron_expression = plan.cron_expression
   editForm.max_results = String(plan.max_results)
+  editForm.quality_rule = plan.quality_rule ? { ...plan.quality_rule, models: [...plan.quality_rule.models] } : undefined
   editForm.enabled = plan.enabled
   editForm.auto_recover = plan.auto_recover
 }
@@ -614,15 +632,17 @@ const cancelEdit = () => {
 }
 
 const handleEdit = async () => {
-  if (!editingPlanId.value || !editForm.model_id || !editForm.cron_expression) return
+  if (!editingPlanId.value || !(editForm.quality_rule ? editForm.quality_rule.models.length : editForm.model_id) || !editForm.cron_expression) return
   updating.value = true
   try {
     const updated = await adminAPI.scheduledTests.update(editingPlanId.value, {
-      model_id: editForm.model_id,
+      model_id: editForm.quality_rule?.models[0] || editForm.model_id,
       cron_expression: editForm.cron_expression,
       max_results: Number(editForm.max_results) || 100,
       enabled: editForm.enabled,
-      auto_recover: editForm.auto_recover
+      quality_rule: editForm.quality_rule,
+      clear_quality: !editForm.quality_rule,
+      auto_recover: !editForm.quality_rule && editForm.auto_recover
     })
     const index = plans.value.findIndex((p) => p.id === editingPlanId.value)
     if (index !== -1) {

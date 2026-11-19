@@ -20,20 +20,23 @@ func NewScheduledTestHandler(scheduledTestSvc *service.ScheduledTestService) *Sc
 }
 
 type createScheduledTestPlanRequest struct {
-	AccountID      int64  `json:"account_id" binding:"required"`
-	ModelID        string `json:"model_id"`
-	CronExpression string `json:"cron_expression" binding:"required"`
-	Enabled        *bool  `json:"enabled"`
-	MaxResults     int    `json:"max_results"`
-	AutoRecover    *bool  `json:"auto_recover"`
+	QualityRule    *service.QualityRule `json:"quality_rule"`
+	AccountID      int64                `json:"account_id" binding:"required"`
+	ModelID        string               `json:"model_id"`
+	CronExpression string               `json:"cron_expression" binding:"required"`
+	Enabled        *bool                `json:"enabled"`
+	MaxResults     int                  `json:"max_results"`
+	AutoRecover    *bool                `json:"auto_recover"`
 }
 
 type updateScheduledTestPlanRequest struct {
-	ModelID        string `json:"model_id"`
-	CronExpression string `json:"cron_expression"`
-	Enabled        *bool  `json:"enabled"`
-	MaxResults     int    `json:"max_results"`
-	AutoRecover    *bool  `json:"auto_recover"`
+	QualityRule    *service.QualityRule `json:"quality_rule"`
+	ClearQuality   bool                 `json:"clear_quality"`
+	ModelID        string               `json:"model_id"`
+	CronExpression string               `json:"cron_expression"`
+	Enabled        *bool                `json:"enabled"`
+	MaxResults     int                  `json:"max_results"`
+	AutoRecover    *bool                `json:"auto_recover"`
 }
 
 // ListByAccount GET /admin/accounts/:id/scheduled-test-plans
@@ -61,6 +64,7 @@ func (h *ScheduledTestHandler) Create(c *gin.Context) {
 	}
 
 	plan := &service.ScheduledTestPlan{
+		QualityRule:    req.QualityRule,
 		AccountID:      req.AccountID,
 		ModelID:        req.ModelID,
 		CronExpression: req.CronExpression,
@@ -104,6 +108,11 @@ func (h *ScheduledTestHandler) Update(c *gin.Context) {
 
 	if req.ModelID != "" {
 		existing.ModelID = req.ModelID
+	}
+	if req.ClearQuality {
+		existing.QualityRule = nil
+	} else if req.QualityRule != nil {
+		existing.QualityRule = req.QualityRule
 	}
 	if req.CronExpression != "" {
 		existing.CronExpression = req.CronExpression

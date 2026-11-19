@@ -22,6 +22,7 @@ import (
 )
 
 type Account struct {
+	QualityHolds            map[string]bool `json:",omitempty"`
 	ID                      int64
 	Name                    string
 	Notes                   *string
@@ -196,7 +197,7 @@ func (a *Account) EffectiveLoadFactor() int {
 }
 
 func (a *Account) IsSchedulable() bool {
-	if !a.IsActive() || !a.Schedulable {
+	if !a.IsActive() || !a.Schedulable || a.QualityHolds["account"] {
 		return false
 	}
 	now := time.Now()

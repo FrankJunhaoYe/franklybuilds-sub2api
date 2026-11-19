@@ -1419,6 +1419,7 @@ func buildSchedulerMetadataAccount(account service.Account) service.Account {
 		GroupIDs:                filterSchedulerGroupIDs(account.GroupIDs, account.AccountGroups),
 		Credentials:             filterSchedulerCredentials(account.Credentials),
 		Extra:                   filterSchedulerExtra(account.Extra),
+		QualityHolds:            account.QualityHolds,
 	}
 }
 

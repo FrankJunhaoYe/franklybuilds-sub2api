@@ -53,6 +53,27 @@ func newJSONResponse(status int, body string) *http.Response {
 
 // --- test functions ---
 
+func TestScheduledQualityOpenAIProbe(t *testing.T) {
+	account := &Account{ID: 42, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Credentials: map[string]any{"access_token": "fixture"}}
+	repo := &openAIAccountTestRepo{mockAccountRepoForGemini: mockAccountRepoForGemini{accountsByID: map[int64]*Account{42: account}}}
+	upstream := &queuedHTTPUpstream{responses: []*http.Response{
+		newJSONResponse(200, "data: {\"type\":\"response.output_text.delta\",\"delta\":\"18\"}\n\ndata: {\"type\":\"response.completed\"}\n\n"),
+		newJSONResponse(401, "unauthorized"),
+	}}
+	svc := &AccountTestService{accountRepo: repo, httpUpstream: upstream}
+	result, err := svc.runBackground(context.Background(), 42, "gpt-5.4", "What is 9+9?")
+	require.NoError(t, err)
+	require.Equal(t, "success", result.Status)
+	require.Equal(t, "18", result.ResponseText)
+	body, err := io.ReadAll(upstream.requests[0].Body)
+	require.NoError(t, err)
+	require.Equal(t, "What is 9+9?", gjson.GetBytes(body, "input.0.content.0.text").String())
+	result, err = svc.runBackground(context.Background(), 42, "gpt-5.4", "What is 9+9?")
+	require.NoError(t, err)
+	require.Equal(t, "failed", result.Status)
+	require.Zero(t, repo.setErrorID)
+}
+
 func newTestContext() (*gin.Context, *httptest.ResponseRecorder) {
 	gin.SetMode(gin.TestMode)
 	rec := httptest.NewRecorder()

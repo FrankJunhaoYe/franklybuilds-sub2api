@@ -132,6 +132,18 @@ func (_u *AccountUpdate) SetExtra(v map[string]interface{}) *AccountUpdate {
 	return _u
 }
 
+// SetQualityHolds sets the "quality_holds" field.
+func (_u *AccountUpdate) SetQualityHolds(v map[string]bool) *AccountUpdate {
+	_u.mutation.SetQualityHolds(v)
+	return _u
+}
+
+// ClearQualityHolds clears the value of the "quality_holds" field.
+func (_u *AccountUpdate) ClearQualityHolds() *AccountUpdate {
+	_u.mutation.ClearQualityHolds()
+	return _u
+}
+
 // SetProxyID sets the "proxy_id" field.
 func (_u *AccountUpdate) SetProxyID(v int64) *AccountUpdate {
 	_u.mutation.SetProxyID(v)
@@ -878,6 +890,12 @@ func (_u *AccountUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	if value, ok := _u.mutation.Extra(); ok {
 		_spec.SetField(account.FieldExtra, field.TypeJSON, value)
 	}
+	if value, ok := _u.mutation.QualityHolds(); ok {
+		_spec.SetField(account.FieldQualityHolds, field.TypeJSON, value)
+	}
+	if _u.mutation.QualityHoldsCleared() {
+		_spec.ClearField(account.FieldQualityHolds, field.TypeJSON)
+	}
 	if value, ok := _u.mutation.SupplierDisabled(); ok {
 		_spec.SetField(account.FieldSupplierDisabled, field.TypeBool, value)
 	}
@@ -1346,6 +1364,18 @@ func (_u *AccountUpdateOne) SetCredentials(v map[string]interface{}) *AccountUpd
 // SetExtra sets the "extra" field.
 func (_u *AccountUpdateOne) SetExtra(v map[string]interface{}) *AccountUpdateOne {
 	_u.mutation.SetExtra(v)
+	return _u
+}
+
+// SetQualityHolds sets the "quality_holds" field.
+func (_u *AccountUpdateOne) SetQualityHolds(v map[string]bool) *AccountUpdateOne {
+	_u.mutation.SetQualityHolds(v)
+	return _u
+}
+
+// ClearQualityHolds clears the value of the "quality_holds" field.
+func (_u *AccountUpdateOne) ClearQualityHolds() *AccountUpdateOne {
+	_u.mutation.ClearQualityHolds()
 	return _u
 }
 
@@ -2124,6 +2154,12 @@ func (_u *AccountUpdateOne) sqlSave(ctx context.Context) (_node *Account, err er
 	}
 	if value, ok := _u.mutation.Extra(); ok {
 		_spec.SetField(account.FieldExtra, field.TypeJSON, value)
+	}
+	if value, ok := _u.mutation.QualityHolds(); ok {
+		_spec.SetField(account.FieldQualityHolds, field.TypeJSON, value)
+	}
+	if _u.mutation.QualityHoldsCleared() {
+		_spec.ClearField(account.FieldQualityHolds, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.SupplierDisabled(); ok {
 		_spec.SetField(account.FieldSupplierDisabled, field.TypeBool, value)
