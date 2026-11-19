@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -37,6 +38,14 @@ func (a *Account) IsSchedulableForModel(requestedModel string) bool {
 func (a *Account) IsSchedulableForModelWithContext(ctx context.Context, requestedModel string) bool {
 	if a == nil {
 		return false
+	}
+	if len(a.QualityHolds) > 0 {
+		if a.QualityHolds["model:"+requestedModel] || a.QualityHolds["model:"+a.GetMappedModel(requestedModel)] {
+			return false
+		}
+		if group, ok := ctx.Value(qualityGroupContext{}).(int64); ok && a.QualityHolds["group:"+strconv.FormatInt(group, 10)] {
+			return false
+		}
 	}
 	if !a.IsSchedulable() {
 		return false

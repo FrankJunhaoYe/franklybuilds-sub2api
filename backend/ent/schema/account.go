@@ -86,6 +86,10 @@ func (Account) Fields() []ent.Field {
 			Default(func() map[string]any { return map[string]any{} }).
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}),
 
+		field.JSON("quality_holds", map[string]bool{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}),
+
 		// proxy_id: 关联的代理配置 ID（可选）
 		// 用于需要通过特定代理访问 API 的场景
 		field.Int64("proxy_id").

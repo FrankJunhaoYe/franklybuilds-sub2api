@@ -605,6 +605,16 @@ func TypeContainsFold(v string) predicate.Account {
 	return predicate.Account(sql.FieldContainsFold(FieldType, v))
 }
 
+// QualityHoldsIsNil applies the IsNil predicate on the "quality_holds" field.
+func QualityHoldsIsNil() predicate.Account {
+	return predicate.Account(sql.FieldIsNull(FieldQualityHolds))
+}
+
+// QualityHoldsNotNil applies the NotNil predicate on the "quality_holds" field.
+func QualityHoldsNotNil() predicate.Account {
+	return predicate.Account(sql.FieldNotNull(FieldQualityHolds))
+}
+
 // ProxyIDEQ applies the EQ predicate on the "proxy_id" field.
 func ProxyIDEQ(v int64) predicate.Account {
 	return predicate.Account(sql.FieldEQ(FieldProxyID, v))

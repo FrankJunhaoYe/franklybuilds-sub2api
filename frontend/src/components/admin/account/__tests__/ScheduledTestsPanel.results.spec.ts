@@ -15,11 +15,11 @@ function deferred<T>() {
 }
 
 import ScheduledTestsPanel from '../ScheduledTestsPanel.vue'
-const { listByAccount, listResults, showError } = vi.hoisted(() => ({
-  listByAccount: vi.fn(), listResults: vi.fn(), showError: vi.fn(),
+const { listByAccount, listResults, create, update, showError } = vi.hoisted(() => ({
+  create: vi.fn(), update: vi.fn(), listByAccount: vi.fn(), listResults: vi.fn(), showError: vi.fn(),
 }))
-vi.mock('@/api/admin', () => ({ adminAPI: { scheduledTests: { listByAccount, listResults } } }))
-vi.mock('@/stores/app', () => ({ useAppStore: () => ({ showError }) }))
+vi.mock('@/api/admin', () => ({ adminAPI: { scheduledTests: { listByAccount, listResults, create, update } } }))
+vi.mock('@/stores/app', () => ({ useAppStore: () => ({ showError, showSuccess: vi.fn() }) }))
 
 async function openPanel() {
   const wrapper = shallowMount(ScheduledTestsPanel, {
@@ -36,6 +36,34 @@ describe('scheduled test result selection', () => {
   beforeEach(() => {
     vi.resetAllMocks()
     listByAccount.mockResolvedValue([1, 2].map(id => ({ id, model_id: `model-${id}`, enabled: true })))
+  })
+
+  it('creates a quality plan using the selected models and renders its evidence', async () => {
+    const rule = { action: 'observe', models: ['m1', 'm2'], failures: 3, passes: 2 }
+    const wrapper = await openPanel()
+    await wrapper.find('button').trigger('click')
+    wrapper.getComponent({ name: 'AccountQualityFields' }).vm.$emit('update:modelValue', rule)
+    await flushPromises()
+    wrapper.findAllComponents({ name: 'Input' }).find(input => input.props('placeholder') === '*/30 * * * *')!.vm.$emit('update:modelValue', '*/30 * * * *')
+    await flushPromises()
+    const save = wrapper.findAll('button').find(button => button.text().includes('common.save'))!
+    listByAccount.mockResolvedValue([{ id: 9, model_id: 'm1', auto_recover: false, cron_expression: '*/30 * * * *', quality_rule: rule, enabled: true }])
+    await save.trigger('click')
+    await flushPromises()
+    expect(create).toHaveBeenCalledWith(expect.objectContaining({ quality_rule: rule, model_id: 'm1', auto_recover: false }))
+    listResults.mockResolvedValue([{ ...result(1), quality_evidence: [{ model: 'm2', verdict: 'failed', answer: 'bad', expected: '18', question: 'Q' }] }])
+    await wrapper.get('.cursor-pointer').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('bad')
+    expect(wrapper.text()).toContain('18')
+    await wrapper.get('button[title="admin.scheduledTests.editPlan"]').trigger('click')
+    wrapper.getComponent({ name: 'AccountQualityFields' }).vm.$emit('update:modelValue', undefined)
+    await flushPromises()
+    const editSave = wrapper.findAll('button').find(button => button.text().includes('common.save'))!
+    update.mockResolvedValue({ id: 9, model_id: 'm1', enabled: true, auto_recover: false })
+    await editSave.trigger('click')
+    await flushPromises()
+    expect(update).toHaveBeenCalledWith(9, expect.objectContaining({ clear_quality: true }))
   })
 
   it.each(['resolve', 'reject'] as const)('ignores an old plan request that later %ss', async outcome => {

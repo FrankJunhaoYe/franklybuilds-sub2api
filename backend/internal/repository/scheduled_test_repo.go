@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/Wei-Shaw/sub2api/internal/service"
@@ -19,17 +20,21 @@ func NewScheduledTestPlanRepository(db *sql.DB) service.ScheduledTestPlanReposit
 }
 
 func (r *scheduledTestPlanRepository) Create(ctx context.Context, plan *service.ScheduledTestPlan) (*service.ScheduledTestPlan, error) {
+	rule, err := json.Marshal(plan.QualityRule)
+	if err != nil {
+		return nil, err
+	}
 	row := r.db.QueryRowContext(ctx, `
-		INSERT INTO scheduled_test_plans (account_id, model_id, cron_expression, enabled, max_results, auto_recover, next_run_at, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW())
-		RETURNING id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at
-	`, plan.AccountID, plan.ModelID, plan.CronExpression, plan.Enabled, plan.MaxResults, plan.AutoRecover, plan.NextRunAt)
+		INSERT INTO scheduled_test_plans (account_id, model_id, cron_expression, enabled, max_results, auto_recover, next_run_at, created_at, updated_at,quality_rule)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW(), NOW(),NULLIF($8::jsonb,'null'::jsonb))
+		RETURNING id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at, quality_rule, quality_state
+	`, plan.AccountID, plan.ModelID, plan.CronExpression, plan.Enabled, plan.MaxResults, plan.AutoRecover, plan.NextRunAt, string(rule))
 	return scanPlan(row)
 }
 
 func (r *scheduledTestPlanRepository) GetByID(ctx context.Context, id int64) (*service.ScheduledTestPlan, error) {
 	row := r.db.QueryRowContext(ctx, `
-		SELECT id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at
+		SELECT id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at, quality_rule, quality_state
 		FROM scheduled_test_plans WHERE id = $1
 	`, id)
 	return scanPlan(row)
@@ -37,7 +42,7 @@ func (r *scheduledTestPlanRepository) GetByID(ctx context.Context, id int64) (*s
 
 func (r *scheduledTestPlanRepository) ListByAccountID(ctx context.Context, accountID int64) ([]*service.ScheduledTestPlan, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at
+		SELECT id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at, quality_rule, quality_state
 		FROM scheduled_test_plans WHERE account_id = $1
 		ORDER BY created_at DESC
 	`, accountID)
@@ -50,9 +55,9 @@ func (r *scheduledTestPlanRepository) ListByAccountID(ctx context.Context, accou
 
 func (r *scheduledTestPlanRepository) ListDue(ctx context.Context, now time.Time) ([]*service.ScheduledTestPlan, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at
+		SELECT id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at, quality_rule, quality_state
 		FROM scheduled_test_plans
-		WHERE enabled = true AND next_run_at <= $1
+		WHERE enabled = true AND next_run_at <= $1 AND (quality_lease_until IS NULL OR quality_lease_until <= $1)
 		ORDER BY next_run_at ASC
 	`, now)
 	if err != nil {
@@ -63,12 +68,18 @@ func (r *scheduledTestPlanRepository) ListDue(ctx context.Context, now time.Time
 }
 
 func (r *scheduledTestPlanRepository) Update(ctx context.Context, plan *service.ScheduledTestPlan) (*service.ScheduledTestPlan, error) {
+	rule, err := json.Marshal(plan.QualityRule)
+	if err != nil {
+		return nil, err
+	}
 	row := r.db.QueryRowContext(ctx, `
 		UPDATE scheduled_test_plans
-		SET model_id = $2, cron_expression = $3, enabled = $4, max_results = $5, auto_recover = $6, next_run_at = $7, updated_at = NOW()
+		SET model_id = $2, cron_expression = $3, enabled = $4, max_results = $5, auto_recover = $6, next_run_at = $7, updated_at = clock_timestamp(), quality_lease_until=NULL,
+            quality_rule=NULLIF($8::jsonb,'null'::jsonb),
+            quality_state=CASE WHEN enabled IS DISTINCT FROM $4 OR quality_rule IS DISTINCT FROM NULLIF($8::jsonb,'null'::jsonb) THEN '{}' ELSE quality_state END
 		WHERE id = $1
-		RETURNING id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at
-	`, plan.ID, plan.ModelID, plan.CronExpression, plan.Enabled, plan.MaxResults, plan.AutoRecover, plan.NextRunAt)
+		RETURNING id, account_id, model_id, cron_expression, enabled, max_results, auto_recover, last_run_at, next_run_at, created_at, updated_at, quality_rule, quality_state
+	`, plan.ID, plan.ModelID, plan.CronExpression, plan.Enabled, plan.MaxResults, plan.AutoRecover, plan.NextRunAt, string(rule))
 	return scanPlan(row)
 }
 
@@ -113,7 +124,7 @@ func (r *scheduledTestResultRepository) Create(ctx context.Context, result *serv
 
 func (r *scheduledTestResultRepository) ListByPlanID(ctx context.Context, planID int64, limit int) ([]*service.ScheduledTestResult, error) {
 	rows, err := r.db.QueryContext(ctx, `
-		SELECT id, plan_id, status, response_text, error_message, latency_ms, started_at, finished_at, created_at
+		SELECT id, plan_id, status, response_text, error_message, latency_ms, started_at, finished_at, created_at, quality_evidence
 		FROM scheduled_test_results
 		WHERE plan_id = $1
 		ORDER BY created_at DESC
@@ -127,11 +138,17 @@ func (r *scheduledTestResultRepository) ListByPlanID(ctx context.Context, planID
 	var results []*service.ScheduledTestResult
 	for rows.Next() {
 		r := &service.ScheduledTestResult{}
+		var evidence []byte
 		if err := rows.Scan(
 			&r.ID, &r.PlanID, &r.Status, &r.ResponseText, &r.ErrorMessage,
-			&r.LatencyMs, &r.StartedAt, &r.FinishedAt, &r.CreatedAt,
+			&r.LatencyMs, &r.StartedAt, &r.FinishedAt, &r.CreatedAt, &evidence,
 		); err != nil {
 			return nil, err
+		}
+		if len(evidence) > 0 {
+			if err := json.Unmarshal(evidence, &r.Evidence); err != nil {
+				return nil, err
+			}
 		}
 		results = append(results, r)
 	}
@@ -161,11 +178,20 @@ type scannable interface {
 
 func scanPlan(row scannable) (*service.ScheduledTestPlan, error) {
 	p := &service.ScheduledTestPlan{}
+	var rule, state []byte
 	if err := row.Scan(
 		&p.ID, &p.AccountID, &p.ModelID, &p.CronExpression, &p.Enabled, &p.MaxResults, &p.AutoRecover,
-		&p.LastRunAt, &p.NextRunAt, &p.CreatedAt, &p.UpdatedAt,
+		&p.LastRunAt, &p.NextRunAt, &p.CreatedAt, &p.UpdatedAt, &rule, &state,
 	); err != nil {
 		return nil, err
+	}
+	if len(rule) > 0 {
+		if err := json.Unmarshal(rule, &p.QualityRule); err != nil {
+			return nil, err
+		}
+		if err := json.Unmarshal(state, &p.QualityState); err != nil {
+			return nil, err
+		}
 	}
 	return p, nil
 }

@@ -111,6 +111,7 @@ func accountReadableSnapshotJSON(account *Account) []byte {
 	}
 	clone := *account
 	clone.Credentials = nil
+	clone.QualityHolds = nil
 	clone.Groups = nil
 	clone.AccountGroups = nil
 	clone.SupplierID = nil

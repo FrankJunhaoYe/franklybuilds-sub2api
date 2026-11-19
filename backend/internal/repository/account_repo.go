@@ -3838,6 +3838,7 @@ func accountEntityToService(m *dbent.Account) *service.Account {
 		Type:                    m.Type,
 		Credentials:             copyJSONMap(m.Credentials),
 		Extra:                   copyJSONMap(m.Extra),
+		QualityHolds:            m.QualityHolds,
 		ProxyID:                 m.ProxyID,
 		SupplierID:              m.SupplierID,
 		SupplierDisabled:        m.SupplierDisabled,

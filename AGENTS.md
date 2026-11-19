@@ -94,6 +94,8 @@ git diff --stat origin/main...origin/feature/frankly-warm-theme
 
 当前必须保留的定制包括：
 
+- 账号质量检测复用账号管理的定时测试面板。升级时保留每条规则的模型判定历史、独立隔离归属、过期任务写入保护，以及 Redis 调度快照中的质量状态。见 [账号质量规则](docs/account-quality.md)。
+
 - `0.2.23-custom.1` 移植网站工单（默认关闭）、指定用户公告与充值／邀请抽奖（默认关闭）。同步时保留公告可见性与已读范围、工单所有权、支付与退款的抽奖账本、管理员调账的同事务写入，以及 WebSocket 每轮独立的下行输出状态。抽奖入口和规则见 [docs/lottery.md](docs/lottery.md) 和 [docs/lottery-invitations.md](docs/lottery-invitations.md)。
 
 - 暖色界面和字体体系，见 [frontend/src/franklybuilds/README.md](frontend/src/franklybuilds/README.md)。

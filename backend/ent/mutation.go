@@ -2312,6 +2312,7 @@ type AccountMutation struct {
 	_type                       *string
 	credentials                 *map[string]interface{}
 	extra                       *map[string]interface{}
+	quality_holds               *map[string]bool
 	supplier_disabled           *bool
 	proxy_fallback_origin_id    *int64
 	addproxy_fallback_origin_id *int64
@@ -2805,6 +2806,55 @@ func (m *AccountMutation) OldExtra(ctx context.Context) (v map[string]interface{
 // ResetExtra resets all changes to the "extra" field.
 func (m *AccountMutation) ResetExtra() {
 	m.extra = nil
+}
+
+// SetQualityHolds sets the "quality_holds" field.
+func (m *AccountMutation) SetQualityHolds(value map[string]bool) {
+	m.quality_holds = &value
+}
+
+// QualityHolds returns the value of the "quality_holds" field in the mutation.
+func (m *AccountMutation) QualityHolds() (r map[string]bool, exists bool) {
+	v := m.quality_holds
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQualityHolds returns the old "quality_holds" field's value of the Account entity.
+// If the Account object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *AccountMutation) OldQualityHolds(ctx context.Context) (v map[string]bool, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQualityHolds is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQualityHolds requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQualityHolds: %w", err)
+	}
+	return oldValue.QualityHolds, nil
+}
+
+// ClearQualityHolds clears the value of the "quality_holds" field.
+func (m *AccountMutation) ClearQualityHolds() {
+	m.quality_holds = nil
+	m.clearedFields[account.FieldQualityHolds] = struct{}{}
+}
+
+// QualityHoldsCleared returns if the "quality_holds" field was cleared in this mutation.
+func (m *AccountMutation) QualityHoldsCleared() bool {
+	_, ok := m.clearedFields[account.FieldQualityHolds]
+	return ok
+}
+
+// ResetQualityHolds resets all changes to the "quality_holds" field.
+func (m *AccountMutation) ResetQualityHolds() {
+	m.quality_holds = nil
+	delete(m.clearedFields, account.FieldQualityHolds)
 }
 
 // SetProxyID sets the "proxy_id" field.
@@ -4271,7 +4321,7 @@ func (m *AccountMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *AccountMutation) Fields() []string {
-	fields := make([]string, 0, 33)
+	fields := make([]string, 0, 34)
 	if m.created_at != nil {
 		fields = append(fields, account.FieldCreatedAt)
 	}
@@ -4298,6 +4348,9 @@ func (m *AccountMutation) Fields() []string {
 	}
 	if m.extra != nil {
 		fields = append(fields, account.FieldExtra)
+	}
+	if m.quality_holds != nil {
+		fields = append(fields, account.FieldQualityHolds)
 	}
 	if m.proxy != nil {
 		fields = append(fields, account.FieldProxyID)
@@ -4397,6 +4450,8 @@ func (m *AccountMutation) Field(name string) (ent.Value, bool) {
 		return m.Credentials()
 	case account.FieldExtra:
 		return m.Extra()
+	case account.FieldQualityHolds:
+		return m.QualityHolds()
 	case account.FieldProxyID:
 		return m.ProxyID()
 	case account.FieldSupplierID:
@@ -4472,6 +4527,8 @@ func (m *AccountMutation) OldField(ctx context.Context, name string) (ent.Value,
 		return m.OldCredentials(ctx)
 	case account.FieldExtra:
 		return m.OldExtra(ctx)
+	case account.FieldQualityHolds:
+		return m.OldQualityHolds(ctx)
 	case account.FieldProxyID:
 		return m.OldProxyID(ctx)
 	case account.FieldSupplierID:
@@ -4591,6 +4648,13 @@ func (m *AccountMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetExtra(v)
+		return nil
+	case account.FieldQualityHolds:
+		v, ok := value.(map[string]bool)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQualityHolds(v)
 		return nil
 	case account.FieldProxyID:
 		v, ok := value.(int64)
@@ -4859,6 +4923,9 @@ func (m *AccountMutation) ClearedFields() []string {
 	if m.FieldCleared(account.FieldNotes) {
 		fields = append(fields, account.FieldNotes)
 	}
+	if m.FieldCleared(account.FieldQualityHolds) {
+		fields = append(fields, account.FieldQualityHolds)
+	}
 	if m.FieldCleared(account.FieldProxyID) {
 		fields = append(fields, account.FieldProxyID)
 	}
@@ -4926,6 +4993,9 @@ func (m *AccountMutation) ClearField(name string) error {
 		return nil
 	case account.FieldNotes:
 		m.ClearNotes()
+		return nil
+	case account.FieldQualityHolds:
+		m.ClearQualityHolds()
 		return nil
 	case account.FieldProxyID:
 		m.ClearProxyID()
@@ -5009,6 +5079,9 @@ func (m *AccountMutation) ResetField(name string) error {
 		return nil
 	case account.FieldExtra:
 		m.ResetExtra()
+		return nil
+	case account.FieldQualityHolds:
+		m.ResetQualityHolds()
 		return nil
 	case account.FieldProxyID:
 		m.ResetProxyID()

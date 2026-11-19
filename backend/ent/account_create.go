@@ -112,6 +112,12 @@ func (_c *AccountCreate) SetExtra(v map[string]interface{}) *AccountCreate {
 	return _c
 }
 
+// SetQualityHolds sets the "quality_holds" field.
+func (_c *AccountCreate) SetQualityHolds(v map[string]bool) *AccountCreate {
+	_c.mutation.SetQualityHolds(v)
+	return _c
+}
+
 // SetProxyID sets the "proxy_id" field.
 func (_c *AccountCreate) SetProxyID(v int64) *AccountCreate {
 	_c.mutation.SetProxyID(v)
@@ -762,6 +768,10 @@ func (_c *AccountCreate) createSpec() (*Account, *sqlgraph.CreateSpec) {
 		_spec.SetField(account.FieldExtra, field.TypeJSON, value)
 		_node.Extra = value
 	}
+	if value, ok := _c.mutation.QualityHolds(); ok {
+		_spec.SetField(account.FieldQualityHolds, field.TypeJSON, value)
+		_node.QualityHolds = value
+	}
 	if value, ok := _c.mutation.SupplierDisabled(); ok {
 		_spec.SetField(account.FieldSupplierDisabled, field.TypeBool, value)
 		_node.SupplierDisabled = value
@@ -1106,6 +1116,24 @@ func (u *AccountUpsert) SetExtra(v map[string]interface{}) *AccountUpsert {
 // UpdateExtra sets the "extra" field to the value that was provided on create.
 func (u *AccountUpsert) UpdateExtra() *AccountUpsert {
 	u.SetExcluded(account.FieldExtra)
+	return u
+}
+
+// SetQualityHolds sets the "quality_holds" field.
+func (u *AccountUpsert) SetQualityHolds(v map[string]bool) *AccountUpsert {
+	u.Set(account.FieldQualityHolds, v)
+	return u
+}
+
+// UpdateQualityHolds sets the "quality_holds" field to the value that was provided on create.
+func (u *AccountUpsert) UpdateQualityHolds() *AccountUpsert {
+	u.SetExcluded(account.FieldQualityHolds)
+	return u
+}
+
+// ClearQualityHolds clears the value of the "quality_holds" field.
+func (u *AccountUpsert) ClearQualityHolds() *AccountUpsert {
+	u.SetNull(account.FieldQualityHolds)
 	return u
 }
 
@@ -1691,6 +1719,27 @@ func (u *AccountUpsertOne) SetExtra(v map[string]interface{}) *AccountUpsertOne 
 func (u *AccountUpsertOne) UpdateExtra() *AccountUpsertOne {
 	return u.Update(func(s *AccountUpsert) {
 		s.UpdateExtra()
+	})
+}
+
+// SetQualityHolds sets the "quality_holds" field.
+func (u *AccountUpsertOne) SetQualityHolds(v map[string]bool) *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetQualityHolds(v)
+	})
+}
+
+// UpdateQualityHolds sets the "quality_holds" field to the value that was provided on create.
+func (u *AccountUpsertOne) UpdateQualityHolds() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateQualityHolds()
+	})
+}
+
+// ClearQualityHolds clears the value of the "quality_holds" field.
+func (u *AccountUpsertOne) ClearQualityHolds() *AccountUpsertOne {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearQualityHolds()
 	})
 }
 
@@ -2511,6 +2560,27 @@ func (u *AccountUpsertBulk) SetExtra(v map[string]interface{}) *AccountUpsertBul
 func (u *AccountUpsertBulk) UpdateExtra() *AccountUpsertBulk {
 	return u.Update(func(s *AccountUpsert) {
 		s.UpdateExtra()
+	})
+}
+
+// SetQualityHolds sets the "quality_holds" field.
+func (u *AccountUpsertBulk) SetQualityHolds(v map[string]bool) *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.SetQualityHolds(v)
+	})
+}
+
+// UpdateQualityHolds sets the "quality_holds" field to the value that was provided on create.
+func (u *AccountUpsertBulk) UpdateQualityHolds() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.UpdateQualityHolds()
+	})
+}
+
+// ClearQualityHolds clears the value of the "quality_holds" field.
+func (u *AccountUpsertBulk) ClearQualityHolds() *AccountUpsertBulk {
+	return u.Update(func(s *AccountUpsert) {
+		s.ClearQualityHolds()
 	})
 }
 
