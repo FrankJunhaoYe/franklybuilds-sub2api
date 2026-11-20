@@ -12,7 +12,7 @@ export default {
       title: 'Reasoning check',
       cadence: 'Every {minutes} min',
       waiting: 'Waiting for a check',
-      legend: '21 green · other yellow · probe failure red · not checked gray',
+      legend: 'Correct green · incorrect yellow · probe failure red · not checked gray',
       states: {
         correct: 'Correct',
         incorrect: 'Wrong answer',

@@ -12,7 +12,7 @@ export default {
       title: '降智状态',
       cadence: '每 {minutes} 分钟检测',
       waiting: '等待检测',
-      legend: '21 绿 · 其他黄 · 检测失败红 · 未检测灰',
+      legend: '答对绿 · 答错黄 · 检测失败红 · 未检测灰',
       states: {
         correct: '正常',
         incorrect: '答案异常',

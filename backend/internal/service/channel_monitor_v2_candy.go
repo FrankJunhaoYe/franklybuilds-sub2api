@@ -30,7 +30,7 @@ type ChannelMonitorV2CandyProbe struct {
 }
 
 func (p ChannelMonitorV2CandyProbe) key() string {
-	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("candy-v1:%s:%s:%d", p.Model, p.ReasoningEffort, p.IntervalMinutes))))
+	return fmt.Sprintf("%x", sha256.Sum256([]byte(fmt.Sprintf("candy-v2:%s:%s:%d", p.Model, p.ReasoningEffort, p.IntervalMinutes))))
 }
 
 type ChannelMonitorV2CandyResult struct {
