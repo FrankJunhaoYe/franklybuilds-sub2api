@@ -246,6 +246,14 @@ export default {
       "label": "创建、修改和删除支付套餐",
       "category": "财务"
     },
+    "lottery_dread": {
+      "label": "读取抽奖奖池与记录",
+      "category": "财务"
+    },
+    "lottery_dwrite": {
+      "label": "管理抽奖奖池与奖品",
+      "category": "财务"
+    },
     "subscriptions_dread": {
       "label": "读取全站订阅记录",
       "category": "订阅"
