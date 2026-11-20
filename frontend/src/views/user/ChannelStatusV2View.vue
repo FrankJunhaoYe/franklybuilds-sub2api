@@ -485,6 +485,7 @@ import MetricCell from '@/features/channel-monitor-v2/MetricCell.vue'
 import MonitorRankBadge from '@/features/channel-monitor-v2/MonitorRankBadge.vue'
 import MonitorTrendChart from '@/features/channel-monitor-v2/MonitorTrendChart.vue'
 import RelayPulseMatrix from '@/features/channel-monitor-v2/RelayPulseMatrix.vue'
+import { monitorRefreshSeconds } from '@/features/channel-monitor-v2/monitorCards'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { extractApiErrorMessage } from '@/utils/apiError'
@@ -829,14 +830,12 @@ function scheduleAutoRefresh() {
     autoRefreshTimer = null
   }
   // Poll faster while first-upgrade bootstrap is filling 90m→30d so the progress bar moves.
-  const seconds = bootstrapActive.value
-    ? 10
-    : snapshot.value?.config?.refresh_interval_seconds || 300
+  const seconds = monitorRefreshSeconds(snapshot.value?.config?.refresh_interval_seconds, matrixRows.value, bootstrapActive.value)
   autoRefreshTimer = window.setInterval(() => {
     if (!loading.value && !refreshing.value) {
       void reload(true)
     }
-  }, Math.max(bootstrapActive.value ? 10 : 60, seconds) * 1000)
+  }, seconds * 1000)
 }
 function drillModel(row: MonitorModelRow) {
   filter.value.platforms = [row.platform]

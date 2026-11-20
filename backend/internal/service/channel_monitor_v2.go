@@ -42,6 +42,8 @@ type ChannelMonitorV2Config struct {
 	RefreshIntervalSeconds int                              `json:"refresh_interval_seconds"`
 	Platforms              []ChannelMonitorV2PlatformConfig `json:"platforms"`
 	GroupIDs               []int64                          `json:"group_ids"`
+	CandyProbes            []ChannelMonitorV2CandyProbe     `json:"candy_probes,omitempty"`
+	CandyHistoryLimit      int                              `json:"candy_history_limit,omitempty"`
 	HealthThresholds       ChannelMonitorV2HealthThresholds `json:"health_thresholds"`
 	// IgnoredErrorCategories are excluded from error_rate / health scoring.
 	// They still appear in the error breakdown with ignored=true (greyed in UI).
@@ -244,13 +246,15 @@ type ChannelMonitorV2ModelRow struct {
 }
 
 type ChannelMonitorV2MatrixRow struct {
-	Platform  string                       `json:"platform"`
-	GroupID   *int64                       `json:"group_id,omitempty"`
-	GroupName string                       `json:"group_name,omitempty"`
-	Model     string                       `json:"model,omitempty"`
-	Metrics   ChannelMonitorV2Metric       `json:"metrics"`
-	Health    ChannelMonitorV2Health       `json:"health"`
-	Buckets   []ChannelMonitorV2TrendPoint `json:"buckets"`
+	Candy       *ChannelMonitorV2CandyHistory  `json:"candy,omitempty"`
+	CandyChecks []ChannelMonitorV2CandyHistory `json:"candy_checks,omitempty"`
+	Platform    string                         `json:"platform"`
+	GroupID     *int64                         `json:"group_id,omitempty"`
+	GroupName   string                         `json:"group_name,omitempty"`
+	Model       string                         `json:"model,omitempty"`
+	Metrics     ChannelMonitorV2Metric         `json:"metrics"`
+	Health      ChannelMonitorV2Health         `json:"health"`
+	Buckets     []ChannelMonitorV2TrendPoint   `json:"buckets"`
 }
 
 type ChannelMonitorV2Matrix struct {
@@ -376,6 +380,7 @@ func ChannelMonitorV2BootstrapProgress(now, coveredFrom time.Time, hasData bool)
 }
 
 type ChannelMonitorV2Service struct {
+	candy    *ChannelMonitorV2CandyService
 	repo     ChannelMonitorV2Repository
 	settings channelMonitorRuntimeReader
 	now      func() time.Time
@@ -435,6 +440,17 @@ func (s *ChannelMonitorV2Service) getEnabledConfig(ctx context.Context) (*Channe
 func (s *ChannelMonitorV2Service) UpdateConfig(ctx context.Context, cfg ChannelMonitorV2Config, expectedVersion int, actorID int64) (*ChannelMonitorV2Config, error) {
 	if err := normalizeChannelMonitorV2Config(&cfg); err != nil {
 		return nil, err
+	}
+	if _, err := normalizeChannelMonitorV2CandyHistoryLimit(cfg.CandyHistoryLimit); err != nil {
+		return nil, err
+	}
+	if err := normalizeChannelMonitorV2CandyProbes(cfg.CandyProbes); err != nil {
+		return nil, err
+	}
+	if s.candy != nil {
+		if err := s.candy.validateGroups(ctx, cfg.CandyProbes); err != nil {
+			return nil, err
+		}
 	}
 	cfg.UpdatedBy = &actorID
 	return s.repo.UpdateConfig(ctx, cfg, expectedVersion)
@@ -538,6 +554,11 @@ func (s *ChannelMonitorV2Service) Matrix(ctx context.Context, filter ChannelMoni
 			}
 		}
 	}
+	if s.candy != nil && matrix != nil {
+		if err := s.candy.attachHistory(ctx, matrix, cfg, admin); err != nil {
+			return nil, err
+		}
+	}
 	return matrix, nil
 }
 
@@ -623,6 +644,8 @@ func redactChannelMonitorV2PublicConfig(cfg *ChannelMonitorV2Config) {
 		return
 	}
 	cfg.GroupIDs = nil
+	cfg.CandyProbes = nil
+	cfg.CandyHistoryLimit = 0
 	cfg.IgnoredErrorCategories = nil
 	cfg.UpdatedBy = nil
 	for i := range cfg.Platforms {

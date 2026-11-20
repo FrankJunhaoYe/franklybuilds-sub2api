@@ -175,6 +175,8 @@
         </div>
       </div>
 
+      <MonitorCandySettings v-model="draft.candy_probes" v-model:history-limit="draft.candy_history_limit" :groups="groups" />
+
       <div class="card overflow-hidden !rounded-3xl !border-0 shadow-sm ring-1 ring-gray-900/5 dark:!bg-dark-800 dark:ring-dark-700">
         <div class="card-header !py-3">
           <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('channelMonitorV2.settings.errorsTitle') }}</h3>
@@ -296,6 +298,8 @@ import {
 } from '@/api/channelMonitorV2'
 import { adminAPI } from '@/api/admin'
 import type { AdminGroup } from '@/types'
+import MonitorCandySettings from './MonitorCandySettings.vue'
+import { CANDY_HISTORY_LIMIT, CANDY_HISTORY_LIMIT_MIN, CANDY_HISTORY_LIMIT_MAX } from './monitorCards'
 
 const { t, te } = useI18n()
 const appStore = useAppStore()
@@ -457,6 +461,25 @@ async function load() {
 
 async function save() {
   if (!draft.value) return
+  const limit = draft.value.candy_history_limit ?? CANDY_HISTORY_LIMIT
+  if (!Number.isInteger(limit) || limit < CANDY_HISTORY_LIMIT_MIN || limit > CANDY_HISTORY_LIMIT_MAX) {
+    appStore.showError(t('channelMonitorV2.candy.historyLimitInvalid'))
+    return
+  }
+  const probes = draft.value.candy_probes ?? []
+  const uniqueProbes = new Set<string>()
+  for (const probe of probes) {
+    if (!probe.model.trim() || !Number.isInteger(probe.interval_minutes) || probe.interval_minutes < 1 || probe.interval_minutes > 1440) {
+      appStore.showError(t('channelMonitorV2.candy.invalid'))
+      return
+    }
+    const identity = JSON.stringify([probe.group_id, probe.model.trim(), probe.reasoning_effort])
+    if (uniqueProbes.has(identity)) {
+      appStore.showError(t('channelMonitorV2.candy.duplicateModel'))
+      return
+    }
+    uniqueProbes.add(identity)
+  }
   saving.value = true
   try {
     const payload = normalizeConfig(draft.value)

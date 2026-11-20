@@ -901,6 +901,9 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 		upstreamTestModelID = normalizeOpenAIModelForUpstream(credentialAccount, testModelID)
 	}
 	payload := createOpenAITestPayload(upstreamTestModelID, isOAuth, c.GetString(qualityQuestionKey))
+	if effort := accountProbeReasoningEffort(ctx, account, upstreamTestModelID); effort != "" {
+		payload["reasoning"] = map[string]string{"effort": effort}
+	}
 	payloadBytes, _ := json.Marshal(payload)
 
 	// Send test_start event once. A task-invalid Agent Identity response may
@@ -1265,7 +1268,11 @@ func (s *AccountTestService) testGrokResponsesConnection(c *gin.Context, ctx con
 
 	payloadBytes, err := buildGrokQuotaProbeBody(testModelID)
 	if q := c.GetString(qualityQuestionKey); q != "" {
-		payloadBytes, err = json.Marshal(map[string]any{"model": testModelID, "input": q, "stream": true})
+		payload := map[string]any{"model": testModelID, "input": q, "stream": true}
+		if effort := accountProbeReasoningEffort(ctx, account, testModelID); effort != "" {
+			payload["reasoning"] = map[string]string{"effort": effort}
+		}
+		payloadBytes, err = json.Marshal(payload)
 	}
 	if err != nil {
 		return s.sendErrorAndEnd(c, "Failed to create Grok test payload")
@@ -2148,6 +2155,9 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 	c.Writer.Flush()
 
 	payload := createOpenAIChatCompletionsTestPayload(testModelID, prompt)
+	if effort := accountProbeReasoningEffort(ctx, account, testModelID); effort != "" {
+		payload["reasoning_effort"] = effort
+	}
 	payloadBytes, _ := json.Marshal(payload)
 
 	s.sendEvent(c, TestEvent{Type: "test_start", Model: testModelID})
@@ -3332,6 +3342,20 @@ func (s *AccountTestService) RunTestBackground(ctx context.Context, accountID in
 }
 
 const qualityQuestionKey = "scheduled_quality_question"
+
+func accountProbeReasoningEffort(ctx context.Context, account *Account, model string) string {
+	effort, _ := ctx.Value(candyReasoningEffortKey{}).(string)
+	if effort == "" {
+		return ""
+	}
+	if account.IsOpenAI() && isOpenAICodexReasoningGPTModel(model) {
+		return normalizeOpenAIReasoningEffortForModel(effort, model)
+	}
+	if account.Platform == PlatformGrok && grokSupportsReasoningEffort(model) {
+		return effort
+	}
+	return ""
+}
 
 func probeText(prompt []string) string {
 	if len(prompt) > 0 && prompt[0] != "" {

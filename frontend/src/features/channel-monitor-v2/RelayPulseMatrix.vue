@@ -113,13 +113,13 @@
               ]"
               :title="slotTooltip(slot)"
               :aria-label="slotTooltip(slot)"
-              :aria-describedby="isTooltipTarget(entry.row, slot) ? tooltipId : undefined"
-              @mouseenter="showTooltip($event, entry.row, slot)"
+              :aria-describedby="isTooltipTarget(tooltipKey(entry.row, slot)) ? tooltipId : undefined"
+              @mouseenter="showTooltip($event, tooltipKey(entry.row, slot), slotTooltipLines(slot))"
               @mouseleave="hideTransientTooltip"
-              @focus="showTooltip($event, entry.row, slot)"
+              @focus="showTooltip($event, tooltipKey(entry.row, slot), slotTooltipLines(slot))"
               @blur="onAnchorBlur"
               @keydown.esc.stop="hideTooltip"
-              @click="toggleTooltip($event, entry.row, slot)"
+              @click="toggleTooltip($event, tooltipKey(entry.row, slot), slotTooltipLines(slot))"
             ></button>
           </div>
           <div class="pulse-axis mt-2 flex min-w-0 justify-between gap-3 text-[10px] leading-snug text-gray-400 dark:text-dark-400">
@@ -127,6 +127,47 @@
             <span class="min-w-0 break-words text-right">{{ axisEnd }}</span>
           </div>
         </div>
+        <section v-if="entry.row.group_id" class="mt-4 min-w-0 border-t border-gray-100 pt-3 dark:border-dark-700">
+          <div class="flex items-center justify-between gap-2">
+            <h4 class="text-xs font-medium text-gray-700 dark:text-gray-200">{{ t('channelMonitorV2.candy.title') }}</h4>
+            <span v-if="!monitorCandyHistories(entry.row).length" class="text-xs text-gray-500 dark:text-gray-400">
+              {{ t('channelMonitorV2.candy.disabled') }}
+            </span>
+          </div>
+          <div v-for="history in monitorCandyHistories(entry.row)" :key="JSON.stringify([history.model, history.reasoning_effort])" class="mt-2">
+            <div class="flex items-start justify-between gap-2 text-[10px] text-gray-500 dark:text-gray-400">
+              <span class="min-w-0 break-words">
+                {{ history.model }} · {{ candyEffortLabel(history.reasoning_effort) }} · {{ t('channelMonitorV2.candy.cadence', { minutes: history.interval_minutes }) }}
+              </span>
+              <span class="shrink-0">{{ candyStateLabel(candyDisplayState(history, Date.now())) }}</span>
+            </div>
+            <div
+              class="mt-1.5 flex h-4 min-w-0 gap-px"
+              role="group"
+              :aria-label="t('channelMonitorV2.candy.historyCount', { count: Math.min(history.results.length, candyHistoryLimit(history)), limit: candyHistoryLimit(history) })"
+            >
+              <template v-for="(result, index) in candyHistorySlots(history)" :key="index">
+                <button
+                  v-if="result"
+                  type="button"
+                  class="min-w-0 flex-1 cursor-help rounded-sm outline-offset-1"
+                  :class="candyColor[result.verdict]"
+                  :aria-label="candyTooltipLines(result, history).slice(0, 3).join(' · ')"
+                  :aria-describedby="isTooltipTarget(candyTooltipKey(entry.row, history, index)) ? tooltipId : undefined"
+                  @mouseenter="showTooltip($event, candyTooltipKey(entry.row, history, index), candyTooltipLines(result, history))"
+                  @mouseleave="hideTransientTooltip"
+                  @focus="showTooltip($event, candyTooltipKey(entry.row, history, index), candyTooltipLines(result, history))"
+                  @blur="onAnchorBlur"
+                  @keydown.esc.stop="hideTooltip"
+                  @click="toggleTooltip($event, candyTooltipKey(entry.row, history, index), candyTooltipLines(result, history))"
+                />
+                <span v-else class="min-w-0 flex-1 rounded-sm bg-gray-200 dark:bg-dark-600" aria-hidden="true" />
+              </template>
+            </div>
+            <p v-if="!history.results.length" class="mt-1 text-[10px] text-gray-500 dark:text-gray-400">{{ t('channelMonitorV2.candy.waiting') }}</p>
+          </div>
+          <p v-if="monitorCandyHistories(entry.row).length" class="mt-2 text-[10px] text-gray-500 dark:text-gray-400">{{ t('channelMonitorV2.candy.legend') }}</p>
+        </section>
       </article>
     </div>
     <div v-else class="card flex min-h-[200px] items-center justify-center !rounded-2xl !p-6">
@@ -165,6 +206,7 @@
 </template>
 
 <script setup lang="ts">
+import { candyDisplayState, candyHistoryLimit, candyHistorySlots, monitorCandyHistories } from './monitorCards'
 import { useI18n } from 'vue-i18n'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, useId, watch } from 'vue'
 import type {
@@ -173,6 +215,8 @@ import type {
   MonitorHealth,
   MonitorMatrixBucket,
   MonitorMatrixRow,
+  MonitorCandyHistory,
+  MonitorCandyResult,
   MonitorMetric,
 } from '@/api/channelMonitorV2'
 import EmptyState from '@/components/common/EmptyState.vue'
@@ -224,6 +268,11 @@ const floatingTooltip = reactive({
   lines: [] as string[],
 })
 
+const candyColor: Record<MonitorCandyResult['verdict'], string> = {
+  correct: 'bg-emerald-500',
+  incorrect: 'bg-amber-400',
+  error: 'bg-red-500',
+}
 const tooltipRef = ref<HTMLElement | null>(null)
 const tooltipId = useId()
 let tooltipAnchor: HTMLElement | null = null
@@ -380,10 +429,6 @@ function formatScore(health: MonitorHealth): string {
   return `${Math.round(score)}`
 }
 
-function bucketTooltip(bucket: MonitorMatrixBucket): string {
-  return bucketTooltipLines(bucket).join('\n')
-}
-
 function bucketTooltipLines(bucket: MonitorMatrixBucket): string[] {
   const metrics = bucket.metrics
   const lines = [
@@ -409,35 +454,61 @@ function emptyTooltipLines(start: string): string[] {
   return [formatBucketRange(start), t('channelMonitorV2.matrix.noTraffic')]
 }
 
+function slotTooltipLines(slot: AlignedSlot): string[] {
+  return slot.bucket ? bucketTooltipLines(slot.bucket) : emptyTooltipLines(slot.start)
+}
+
 function slotTooltip(slot: AlignedSlot): string {
-  return slot.bucket ? bucketTooltip(slot.bucket) : emptyTooltipLines(slot.start).join('\n')
+  return slotTooltipLines(slot).join('\n')
 }
 
 function tooltipKey(row: MonitorMatrixRow, slot: AlignedSlot): string {
   return `${rowKey(row)}:${slot.start}`
 }
 
-function isTooltipTarget(row: MonitorMatrixRow, slot: AlignedSlot): boolean {
-  return floatingTooltip.visible && floatingTooltip.key === tooltipKey(row, slot)
+function candyTooltipKey(row: MonitorMatrixRow, history: MonitorCandyHistory, index: number): string {
+  return JSON.stringify([rowKey(row), history.model, history.reasoning_effort, index])
 }
 
-function showTooltip(event: MouseEvent | FocusEvent, row: MonitorMatrixRow, slot: AlignedSlot) {
+function candyEffortLabel(effort: string): string {
+  return effort === 'default' ? t('channelMonitorV2.candy.defaultEffort') : effort
+}
+
+function candyStateLabel(state: ReturnType<typeof candyDisplayState>): string {
+  return t('channelMonitorV2.candy.states.' + state)
+}
+
+function candyTooltipLines(result: MonitorCandyResult, history: MonitorCandyHistory): string[] {
+  const lines = [
+    [history.model, candyEffortLabel(history.reasoning_effort)].join(' · '),
+    [formatAxisTime(result.checked_at), candyStateLabel(result.verdict)].join(' · '),
+    t('channelMonitorV2.candy.duration', { value: formatMs(result.latency_ms) }),
+  ]
+  if (result.answer_preview) lines.push(t('channelMonitorV2.candy.answer', { value: result.answer_preview }))
+  return lines
+}
+
+function isTooltipTarget(key: string): boolean {
+  return floatingTooltip.visible && floatingTooltip.key === key
+}
+
+function showTooltip(event: MouseEvent | FocusEvent, key: string, lines: string[]) {
   if (floatingTooltip.pinned) return
-  openTooltip(event, row, slot, false)
+  openTooltip(event, key, lines, false)
 }
 
-function toggleTooltip(event: MouseEvent, row: MonitorMatrixRow, slot: AlignedSlot) {
-  if (floatingTooltip.pinned && isTooltipTarget(row, slot)) {
+function toggleTooltip(event: MouseEvent, key: string, lines: string[]) {
+  if (floatingTooltip.pinned && isTooltipTarget(key)) {
     hideTooltip()
     return
   }
-  openTooltip(event, row, slot, true)
+  openTooltip(event, key, lines, true)
 }
 
-function openTooltip(event: MouseEvent | FocusEvent, row: MonitorMatrixRow, slot: AlignedSlot, pinned: boolean) {
+function openTooltip(event: MouseEvent | FocusEvent, key: string, lines: string[], pinned: boolean) {
   tooltipAnchor = event.currentTarget as HTMLElement | null
-  floatingTooltip.lines = slot.bucket ? bucketTooltipLines(slot.bucket) : emptyTooltipLines(slot.start)
-  floatingTooltip.key = tooltipKey(row, slot)
+  floatingTooltip.lines = lines
+  floatingTooltip.key = key
   floatingTooltip.pinned = pinned
   floatingTooltip.visible = true
   void nextTick(positionTooltip)
