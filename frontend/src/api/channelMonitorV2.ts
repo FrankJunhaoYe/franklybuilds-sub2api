@@ -104,6 +104,8 @@ export interface MonitorConfig {
   refresh_interval_seconds: 60 | 300
   platforms: Array<{ platform: string; enabled: boolean; models: string[] }>
   group_ids: number[]
+  candy_probes?: MonitorCandyProbe[]
+  candy_history_limit?: number
   health_thresholds: {
     minimum_sample: number
     warning_error_rate: number
@@ -158,7 +160,30 @@ export interface MonitorMatrixBucket {
   health: MonitorHealth
 }
 
+export interface MonitorCandyProbe {
+  group_id: number
+  enabled: boolean
+  model: string
+  reasoning_effort: string
+  interval_minutes: number
+}
+
+export interface MonitorCandyResult {
+  checked_at: string
+  verdict: 'correct' | 'incorrect' | 'error'
+  latency_ms: number
+  answer_preview?: string
+  reason?: string
+}
+
+export interface MonitorCandyHistory extends Pick<MonitorCandyProbe, 'model' | 'reasoning_effort' | 'interval_minutes'> {
+  history_limit?: number
+  results: MonitorCandyResult[]
+}
+
 export interface MonitorMatrixRow {
+  candy?: MonitorCandyHistory
+  candy_checks?: MonitorCandyHistory[]
   platform: string
   group_id?: number
   group_name?: string

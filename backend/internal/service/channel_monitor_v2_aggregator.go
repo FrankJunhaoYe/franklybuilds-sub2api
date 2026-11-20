@@ -42,6 +42,7 @@ type channelMonitorRuntimeSubscriber interface {
 }
 
 type ChannelMonitorV2Aggregator struct {
+	candy      *ChannelMonitorV2CandyService
 	repo       ChannelMonitorV2Repository
 	db         *sql.DB
 	settings   channelMonitorRuntimeReader
@@ -87,7 +88,11 @@ func (s *ChannelMonitorV2Aggregator) Start() {
 	s.startOnce.Do(func() {
 		s.mu.Lock()
 		s.ctx, s.cancel = context.WithCancel(context.Background())
+		ctx := s.ctx
 		s.mu.Unlock()
+		if s.candy != nil {
+			go s.candy.loop(ctx)
+		}
 		if sub, ok := s.settings.(channelMonitorRuntimeSubscriber); ok && sub != nil {
 			unsub := sub.SubscribeChannelMonitorRuntime(func() {
 				s.kick()

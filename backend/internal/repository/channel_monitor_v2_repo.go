@@ -21,17 +21,17 @@ func NewChannelMonitorV2Repository(db *sql.DB) service.ChannelMonitorV2Repositor
 
 func (r *channelMonitorV2Repository) GetConfig(ctx context.Context) (*service.ChannelMonitorV2Config, error) {
 	var cfg service.ChannelMonitorV2Config
-	var platforms, thresholds []byte
+	var platforms, thresholds, probes []byte
 	err := r.db.QueryRowContext(ctx, `
 		SELECT version, enabled, refresh_interval_seconds, platforms, group_ids,
 		       COALESCE(ignored_error_categories, '{}'),
 		       COALESCE(health_thresholds, '{}'::jsonb),
-		       updated_at, updated_by
+		       updated_at, updated_by, candy_probes, candy_history_limit
 		FROM channel_monitor_v2_config WHERE id = 1`).Scan(
 		&cfg.Version, &cfg.Enabled, &cfg.RefreshIntervalSeconds, &platforms,
 		pq.Array(&cfg.GroupIDs), pq.Array(&cfg.IgnoredErrorCategories),
 		&thresholds,
-		&cfg.UpdatedAt, &cfg.UpdatedBy,
+		&cfg.UpdatedAt, &cfg.UpdatedBy, &probes, &cfg.CandyHistoryLimit,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("get channel monitor v2 config: %w", err)
@@ -47,6 +47,9 @@ func (r *channelMonitorV2Repository) GetConfig(ctx context.Context) (*service.Ch
 		_ = json.Unmarshal(thresholds, &cfg.HealthThresholds)
 	}
 	cfg.HealthThresholds = service.NormalizeChannelMonitorV2HealthThresholds(cfg.HealthThresholds)
+	if err := json.Unmarshal(probes, &cfg.CandyProbes); err != nil {
+		return nil, fmt.Errorf("decode channel monitor v2 candy probes: %w", err)
+	}
 	return &cfg, nil
 }
 
@@ -63,24 +66,35 @@ func (r *channelMonitorV2Repository) UpdateConfig(ctx context.Context, cfg servi
 	if err != nil {
 		return nil, err
 	}
+	// Omitted fields from older clients must preserve stored probe settings.
+	var probes any
+	if cfg.CandyProbes != nil {
+		rawProbes, err := json.Marshal(cfg.CandyProbes)
+		if err != nil {
+			return nil, err
+		}
+		probes = string(rawProbes)
+	}
 	var updated service.ChannelMonitorV2Config
-	var raw, rawThresholds []byte
+	var raw, rawThresholds, rawProbes []byte
 	err = r.db.QueryRowContext(ctx, `
 		UPDATE channel_monitor_v2_config
 		SET version = version + 1, enabled = $1, refresh_interval_seconds = $2,
 		    platforms = $3, group_ids = $4, ignored_error_categories = $5,
-		    health_thresholds = $6, updated_by = $7, updated_at = NOW()
+		    health_thresholds = $6, updated_by = $7, updated_at = NOW(),
+		    candy_probes = COALESCE($9::jsonb, candy_probes),
+		    candy_history_limit = COALESCE(NULLIF($10::int, 0), candy_history_limit)
 		WHERE id = 1 AND version = $8
 		RETURNING version, enabled, refresh_interval_seconds, platforms, group_ids,
 		          COALESCE(ignored_error_categories, '{}'),
 		          COALESCE(health_thresholds, '{}'::jsonb),
-		          updated_at, updated_by`,
+		          updated_at, updated_by, candy_probes, candy_history_limit`,
 		cfg.Enabled, cfg.RefreshIntervalSeconds, platforms, pq.Array(cfg.GroupIDs),
-		pq.Array(cfg.IgnoredErrorCategories), thresholds, cfg.UpdatedBy, expectedVersion,
+		pq.Array(cfg.IgnoredErrorCategories), thresholds, cfg.UpdatedBy, expectedVersion, probes, cfg.CandyHistoryLimit,
 	).Scan(&updated.Version, &updated.Enabled, &updated.RefreshIntervalSeconds, &raw,
 		pq.Array(&updated.GroupIDs), pq.Array(&updated.IgnoredErrorCategories),
 		&rawThresholds,
-		&updated.UpdatedAt, &updated.UpdatedBy)
+		&updated.UpdatedAt, &updated.UpdatedBy, &rawProbes, &updated.CandyHistoryLimit)
 	if err == sql.ErrNoRows {
 		return nil, service.ErrChannelMonitorV2ConfigConflict
 	}
@@ -96,6 +110,9 @@ func (r *channelMonitorV2Repository) UpdateConfig(ctx context.Context, cfg servi
 	updated.HealthThresholds = service.DefaultChannelMonitorV2HealthThresholds()
 	_ = json.Unmarshal(rawThresholds, &updated.HealthThresholds)
 	updated.HealthThresholds = service.NormalizeChannelMonitorV2HealthThresholds(updated.HealthThresholds)
+	if err := json.Unmarshal(rawProbes, &updated.CandyProbes); err != nil {
+		return nil, fmt.Errorf("decode channel monitor v2 candy probes: %w", err)
+	}
 	return &updated, nil
 }
 
