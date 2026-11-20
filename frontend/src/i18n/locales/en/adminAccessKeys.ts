@@ -246,6 +246,14 @@ export default {
       "label": "Create, edit, and delete payment plans",
       "category": "Finance"
     },
+    "lottery_dread": {
+      "label": "Read prize draw pools and records",
+      "category": "Finance"
+    },
+    "lottery_dwrite": {
+      "label": "Manage prize draw pools and prizes",
+      "category": "Finance"
+    },
     "subscriptions_dread": {
       "label": "Read all subscription records",
       "category": "Subscriptions"
